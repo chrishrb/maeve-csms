@@ -15,44 +15,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type chargeStation struct {
-	Id                     string        `firestore:"id"`
-	LocationId             string        `firestore:"location_id"`
-	Evses                  *[]store.Evse `firestore:"evses"`
-	SecurityProfile        int           `firestore:"prof"`
-	Base64SHA256Password   string        `firestore:"pwd"`
-	InvalidUsernameAllowed bool          `firestore:"inv"`
-}
-
 func (s *Store) CreateChargeStation(ctx context.Context, cs *store.ChargeStation) (*store.ChargeStation, error) {
 	id := uuid.NewString()
 	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", id))
 	cs.Id = id
-	_, err := csRef.Set(ctx, &chargeStation{
-		Id:                     cs.Id,
-		LocationId:             cs.LocationId,
-		Evses:                  cs.Evses,
-		SecurityProfile:        int(cs.SecurityProfile),
-		Base64SHA256Password:   cs.Base64SHA256Password,
-		InvalidUsernameAllowed: cs.InvalidUsernameAllowed,
-	})
+	_, err := csRef.Set(ctx, &cs)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("setting cs %s: %w", id, err) 
 	}
 	return s.LookupChargeStation(ctx, id)
 }
 
 func (s *Store) UpdateChargeStation(ctx context.Context, csId string, cs *store.ChargeStation) (*store.ChargeStation, error) {
 	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", csId))
-	_, err := csRef.Set(ctx, &chargeStation{
-		LocationId:             cs.LocationId,
-		Evses:                  cs.Evses,
-		SecurityProfile:        int(cs.SecurityProfile),
-		Base64SHA256Password:   cs.Base64SHA256Password,
-		InvalidUsernameAllowed: cs.InvalidUsernameAllowed,
-	})
+	_, err := csRef.Set(ctx, &cs)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("setting cs %s: %w", csId, err) 
 	}
 	return s.LookupChargeStation(ctx, csId)
 }
@@ -75,18 +53,11 @@ func (s *Store) LookupChargeStation(ctx context.Context, chargeStationId string)
 		}
 		return nil, fmt.Errorf("lookup charge station %s: %w", chargeStationId, err)
 	}
-	var csData chargeStation
-	if err = snap.DataTo(&csData); err != nil {
+	var cs store.ChargeStation
+	if err = snap.DataTo(&cs); err != nil {
 		return nil, fmt.Errorf("map charge station %s: %w", chargeStationId, err)
 	}
-	return &store.ChargeStation{
-		Id:                     csData.Id,
-		LocationId:             csData.LocationId,
-		Evses:                  csData.Evses,
-		SecurityProfile:        store.SecurityProfile(csData.SecurityProfile),
-		Base64SHA256Password:   csData.Base64SHA256Password,
-		InvalidUsernameAllowed: csData.InvalidUsernameAllowed,
-	}, nil
+  return &cs, nil
 }
 
 func (s *Store) ListChargeStations(context context.Context, offset, limit int) ([]*store.ChargeStation, error) {
@@ -100,19 +71,11 @@ func (s *Store) ListChargeStations(context context.Context, offset, limit int) (
 		if err != nil {
 			return nil, fmt.Errorf("next chargeStation: %w", err)
 		}
-		var csData chargeStation
-		if err = snap.DataTo(&csData); err != nil {
+	  var cs store.ChargeStation
+		if err = snap.DataTo(&cs); err != nil {
 			return nil, fmt.Errorf("map chargeStation: %w", err)
 		}
-		cs := &store.ChargeStation{
-			Id:                     csData.Id,
-			LocationId:             csData.LocationId,
-			Evses:                  csData.Evses,
-			SecurityProfile:        store.SecurityProfile(csData.SecurityProfile),
-			Base64SHA256Password:   csData.Base64SHA256Password,
-			InvalidUsernameAllowed: csData.InvalidUsernameAllowed,
-		}
-		chargeStations = append(chargeStations, cs)
+		chargeStations = append(chargeStations, &cs)
 	}
 	if chargeStations == nil {
 		chargeStations = make([]*store.ChargeStation, 0)

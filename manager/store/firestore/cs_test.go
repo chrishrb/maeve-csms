@@ -81,6 +81,77 @@ func TestSetAndLookupChargeStation(t *testing.T) {
 	assert.Equal(t, want, got)
 }
 
+func TestListChargeStations(t *testing.T) {
+	defer cleanupAllCollections(t, "myproject")
+
+	ctx := context.Background()
+
+	csStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer csStore.CloseConn()
+	require.NoError(t, err)
+
+	chargeStations := []*store.ChargeStation{
+		{
+			LocationId: "location001",
+			Evses: &[]store.Evse{
+				{
+					Connectors: []store.Connector{
+						{
+							Format:      "Type2",
+							Id:          "1",
+							MaxAmperage: 32,
+							MaxVoltage:  400,
+							PowerType:   "AC",
+							Standard:    "IEC62196",
+							LastUpdated: time.Now().Format(time.RFC3339),
+						},
+					},
+					EvseId:      testutil.StringPtr("EVSE1"),
+					Status:      "Available",
+					Uid:         "UID1",
+					LastUpdated: time.Now().Format(time.RFC3339),
+				},
+			},
+			SecurityProfile:      store.TLSWithClientSideCertificates,
+			Base64SHA256Password: "DEADBEEF",
+		},
+		{
+			LocationId: "location002",
+			Evses: &[]store.Evse{
+				{
+					Connectors: []store.Connector{
+						{
+							Format:      "Type2",
+							Id:          "2",
+							MaxAmperage: 32,
+							MaxVoltage:  400,
+							PowerType:   "AC",
+							Standard:    "IEC62196",
+							LastUpdated: time.Now().Format(time.RFC3339),
+						},
+					},
+					EvseId:      testutil.StringPtr("EVSE2"),
+					Status:      "Available",
+					Uid:         "UID2",
+					LastUpdated: time.Now().Format(time.RFC3339),
+				},
+			},
+			SecurityProfile:      store.TLSWithClientSideCertificates,
+			Base64SHA256Password: "DEADBEEF",
+		},
+	}
+
+	for _, cs := range chargeStations {
+		_, err := csStore.CreateChargeStation(ctx, cs)
+		require.NoError(t, err)
+	}
+
+	got, err := csStore.ListChargeStations(ctx, 0, 20)
+	require.NoError(t, err)
+
+	assert.Len(t, got, len(chargeStations))
+}
+
 func TestLookupChargeStationWithUnregisteredChargeStation(t *testing.T) {
 	defer cleanupAllCollections(t, "myproject")
 

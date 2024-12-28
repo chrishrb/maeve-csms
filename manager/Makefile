@@ -26,7 +26,7 @@ test: ## Test
 	${GOCMD} test ./...
 
 .PHONY: integration
-integration: ## Integration-tests
+integration: ## Run unit and integration tests
 	${GOCMD} test -tags=integration ./...
 
 .PHONY: format
