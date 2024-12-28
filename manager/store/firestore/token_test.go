@@ -23,6 +23,7 @@ func deleteTokens(t *testing.T, gcloudProject string) {
 	ctx := context.Background()
 
 	client, err := firestoreapi.NewClient(ctx, gcloudProject)
+	defer client.Close()
 	assert.NoError(t, err)
 
 	col := client.Collection("Token")
@@ -54,6 +55,7 @@ func TestSetAndLookupToken(t *testing.T) {
 	ctx := context.Background()
 
 	tokenStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer tokenStore.CloseConn()
 	require.NoError(t, err)
 
 	contractId, err := ocpp.NormalizeEmaid("GB-TWK-C12345678")
@@ -86,6 +88,7 @@ func TestLookupTokenThatDoesNotExist(t *testing.T) {
 	ctx := context.Background()
 
 	tokenStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer tokenStore.CloseConn()
 	require.NoError(t, err)
 
 	got, err := tokenStore.LookupToken(ctx, "unknown-rfid")
@@ -99,6 +102,7 @@ func TestListTokensWithNoMatches(t *testing.T) {
 	ctx := context.Background()
 
 	tokenStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer tokenStore.CloseConn()
 	require.NoError(t, err)
 
 	got, err := tokenStore.ListTokens(ctx, 0, 10)
@@ -112,6 +116,7 @@ func TestListTokens(t *testing.T) {
 	ctx := context.Background()
 
 	tokenStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer tokenStore.CloseConn()
 	require.NoError(t, err)
 
 	contractId, err := ocpp.NormalizeEmaid("GB-TWK-C12345678")
@@ -154,6 +159,7 @@ func TestListTokensWithOffset(t *testing.T) {
 	ctx := context.Background()
 
 	tokenStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer tokenStore.CloseConn()
 	require.NoError(t, err)
 
 	contractId, err := ocpp.NormalizeEmaid("GB-TWK-C12345678")

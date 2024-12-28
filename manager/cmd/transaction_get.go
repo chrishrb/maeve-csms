@@ -29,12 +29,13 @@ var getTransactionsCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		transactionStore, err := firestore.NewStore(ctx, gcloudProject, clock.RealClock{})
+		defer transactionStore.CloseConn()
 		if err != nil {
 			return fmt.Errorf("creating transaction store: %w", err)
 		}
 
 		if len(args) == 0 {
-			transactions, err := transactionStore.Transactions(ctx)
+			transactions, err := transactionStore.ListTransactions(ctx)
 			if err != nil {
 				return fmt.Errorf("getting transactions: %w", err)
 			}

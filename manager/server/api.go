@@ -4,7 +4,6 @@ package server
 
 import (
 	"github.com/rs/cors"
-	"github.com/thoughtworks/maeve-csms/manager/adminui"
 	"github.com/thoughtworks/maeve-csms/manager/api"
 	"github.com/thoughtworks/maeve-csms/manager/config"
 	"github.com/thoughtworks/maeve-csms/manager/ocpi"
@@ -50,7 +49,6 @@ func NewApiHandler(settings config.ApiSettings, engine store.Engine, ocpi ocpi.A
 	r.Handle("/metrics", promhttp.Handler())
 	r.Get("/api/openapi.json", getApiSwaggerJson)
 	r.With(logger).Mount("/api/v0", api.Handler(apiServer))
-	r.With(logger).Mount("/adminui", adminui.NewServer(settings.Host, settings.WsPort, settings.WssPort, settings.OrgName, engine, csCertProvider))
 	return r
 }
 
@@ -75,7 +73,7 @@ func health(w http.ResponseWriter, r *http.Request) {
 
 func transactions(transactionStore store.Engine) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ts, err := transactionStore.Transactions(r.Context())
+		ts, err := transactionStore.ListTransactions(r.Context())
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return

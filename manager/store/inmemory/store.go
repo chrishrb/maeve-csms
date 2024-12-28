@@ -9,14 +9,16 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"fmt"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
-	"k8s.io/utils/clock"
 	"math"
 	"sort"
 	"sync"
 	"time"
 
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
+	"k8s.io/utils/clock"
+
+	"github.com/google/uuid"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 )
 
@@ -26,7 +28,7 @@ import (
 type Store struct {
 	sync.Mutex
 	clock                            clock.PassiveClock
-	chargeStationAuth                map[string]*store.ChargeStationAuth
+	chargeStation                    map[string]*store.ChargeStation
 	chargeStationSettings            map[string]*store.ChargeStationSettings
 	chargeStationInstallCertificates map[string]*store.ChargeStationInstallCertificates
 	chargeStationRuntimeDetails      map[string]*store.ChargeStationRuntimeDetails
@@ -42,7 +44,7 @@ type Store struct {
 func NewStore(clock clock.PassiveClock) *Store {
 	return &Store{
 		clock:                            clock,
-		chargeStationAuth:                make(map[string]*store.ChargeStationAuth),
+		chargeStation:                    make(map[string]*store.ChargeStation),
 		chargeStationSettings:            make(map[string]*store.ChargeStationSettings),
 		chargeStationInstallCertificates: make(map[string]*store.ChargeStationInstallCertificates),
 		chargeStationRuntimeDetails:      make(map[string]*store.ChargeStationRuntimeDetails),
@@ -56,17 +58,53 @@ func NewStore(clock clock.PassiveClock) *Store {
 	}
 }
 
-func (s *Store) SetChargeStationAuth(_ context.Context, chargeStationId string, auth *store.ChargeStationAuth) error {
+func (s *Store) CloseConn() {}
+
+func (s *Store) CreateChargeStation(_ context.Context, cs *store.ChargeStation) (*store.ChargeStation, error) {
 	s.Lock()
 	defer s.Unlock()
-	s.chargeStationAuth[chargeStationId] = auth
+	id := uuid.NewString()
+	cs.Id = id
+	s.chargeStation[id] = cs
+	return cs, nil
+}
+
+func (s *Store) UpdateChargeStation(_ context.Context, csId string, cs *store.ChargeStation) (*store.ChargeStation, error) {
+	s.Lock()
+	defer s.Unlock()
+	cs.Id = csId
+	s.chargeStation[csId] = cs
+	return cs, nil
+}
+
+func (s *Store) LookupChargeStation(_ context.Context, chargeStationId string) (*store.ChargeStation, error) {
+	s.Lock()
+	defer s.Unlock()
+	return s.chargeStation[chargeStationId], nil
+}
+
+func (s *Store) DeleteChargeStation(_ context.Context, chargeStationId string) error {
+	s.Lock()
+	defer s.Unlock()
+	s.chargeStation[chargeStationId] = nil
 	return nil
 }
 
-func (s *Store) LookupChargeStationAuth(_ context.Context, chargeStationId string) (*store.ChargeStationAuth, error) {
+func (s *Store) ListChargeStations(_ context.Context, offset int, limit int) ([]*store.ChargeStation, error) {
 	s.Lock()
 	defer s.Unlock()
-	return s.chargeStationAuth[chargeStationId], nil
+	var chargeStations []*store.ChargeStation
+	count := 0
+	for _, cs := range s.chargeStation {
+		if count >= offset && count < offset+limit {
+			chargeStations = append(chargeStations, cs)
+		}
+		count++
+	}
+	if chargeStations == nil {
+		chargeStations = make([]*store.ChargeStation, 0)
+	}
+	return chargeStations, nil
 }
 
 func (s *Store) UpdateChargeStationSettings(_ context.Context, chargeStationId string, settings *store.ChargeStationSettings) error {
@@ -283,7 +321,7 @@ func (s *Store) updateTransaction(transaction *store.Transaction) {
 	s.transactions[key] = transaction
 }
 
-func (s *Store) Transactions(_ context.Context) ([]*store.Transaction, error) {
+func (s *Store) ListTransactions(_ context.Context) ([]*store.Transaction, error) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -481,13 +519,23 @@ func (s *Store) ListPartyDetailsForRole(_ context.Context, role string) ([]*stor
 	return parties, nil
 }
 
-func (s *Store) SetLocation(_ context.Context, location *store.Location) error {
+func (s *Store) CreateLocation(_ context.Context, location *store.Location) (*store.Location, error) {
 	s.Lock()
 	defer s.Unlock()
 
+	location.Id = uuid.NewString()
 	s.locations[location.Id] = location
 
-	return nil
+	return location, nil
+}
+
+func (s *Store) UpdateLocation(_ context.Context, locationId string, location *store.Location) (*store.Location, error) {
+	s.Lock()
+	defer s.Unlock()
+
+	s.locations[locationId] = location
+
+	return location, nil
 }
 
 func (s *Store) LookupLocation(_ context.Context, locationId string) (*store.Location, error) {
@@ -495,6 +543,15 @@ func (s *Store) LookupLocation(_ context.Context, locationId string) (*store.Loc
 	defer s.Unlock()
 
 	return s.locations[locationId], nil
+}
+
+func (s *Store) DeleteLocation(_ context.Context, locationId string) error {
+	s.Lock()
+	defer s.Unlock()
+
+	s.locations[locationId] = nil
+
+	return nil
 }
 
 func (s *Store) ListLocations(_ context.Context, offset int, limit int) ([]*store.Location, error) {

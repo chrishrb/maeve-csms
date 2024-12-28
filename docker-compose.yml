@@ -109,3 +109,12 @@ services:
       - --host-port=0.0.0.0:8080
     ports:
       - "8080:8080"
+
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    environment:
+      SWAGGER_JSON_URL: http://localhost:9410/api/openapi.json
+    ports:
+      - "8081:8080"
+    depends_on:
+      - manager

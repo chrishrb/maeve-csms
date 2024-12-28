@@ -29,7 +29,7 @@ func setup() func() {
 			"emulators",
 			"firestore",
 			"start",
-			"--host-port=127.0.0.1:8080",
+			"--host-port=0.0.0.0:8080",
 		},
 		ExposedPorts: []string{"8080/tcp"},
 		WaitingFor: wait.ForAll(
@@ -90,6 +90,7 @@ func cleanupCollection(t *testing.T, gcloudProject, collection string) {
 	ctx := context.Background()
 
 	client, err := firestoreapi.NewClient(ctx, gcloudProject)
+	defer client.Close()
 	assert.NoError(t, err)
 
 	col := client.Collection(collection)

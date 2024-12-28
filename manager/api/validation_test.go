@@ -3,35 +3,27 @@
 package api_test
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/thoughtworks/maeve-csms/manager/api"
-	"github.com/thoughtworks/maeve-csms/manager/store/inmemory"
+	"context"
+	"fmt"
 	"io"
-	"k8s.io/utils/clock"
-	clockTest "k8s.io/utils/clock/testing"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/thoughtworks/maeve-csms/manager/api"
+	"github.com/thoughtworks/maeve-csms/manager/store"
+	"github.com/thoughtworks/maeve-csms/manager/testutil"
 )
 
 func TestValidationMiddlewareWithInvalidRequest(t *testing.T) {
-	engine := inmemory.NewStore(clock.RealClock{})
-
-	now := time.Now()
-	srv, err := api.NewServer(engine, clockTest.NewFakePassiveClock(now), nil)
-	require.NoError(t, err)
-
-	r := chi.NewRouter()
-	r.Use(api.ValidationMiddleware)
-	r.Mount("/", api.Handler(srv))
-	server := httptest.NewServer(r)
+	server, r, _, _ := setupServer(t)
 	defer server.Close()
 
-	req := httptest.NewRequest(http.MethodPost, "/cs/cs001", strings.NewReader(""))
+	req := httptest.NewRequest(http.MethodPost, "/cs", strings.NewReader(""))
 	req.Header.Set("content-type", "application/json")
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
@@ -43,27 +35,32 @@ func TestValidationMiddlewareWithInvalidRequest(t *testing.T) {
 }
 
 func TestValidationMiddlewareWithValidRequest(t *testing.T) {
-	engine := inmemory.NewStore(clock.RealClock{})
-
-	now := time.Now()
-	srv, err := api.NewServer(engine, clockTest.NewFakePassiveClock(now), nil)
-	require.NoError(t, err)
-
-	r := chi.NewRouter()
-	r.Use(api.ValidationMiddleware)
-	r.Mount("/", api.Handler(srv))
-	server := httptest.NewServer(r)
+	server, r, engine, _ := setupServer(t)
 	defer server.Close()
 
-	req := httptest.NewRequest(http.MethodPost, "/cs/cs001", strings.NewReader(`{"securityProfile":0}`))
+	// Create location
+	loc, err := engine.CreateLocation(context.Background(), &store.Location{
+		Address: "F.Rooseveltlaan 3A",
+		City:    "Gent",
+		Coordinates: store.GeoLocation{
+			Latitude:  "51.047599",
+			Longitude: "3.729944",
+		},
+		Country:     "BEL",
+		CountryCode: "BEL",
+		Name:        testutil.StringPtr("Gent Zuid"),
+		ParkingType: testutil.StringPtr("ON_STREET"),
+		PostalCode:  testutil.StringPtr("9000"),
+		PartyId:     "TWK",
+	})
+
+	req := httptest.NewRequest(http.MethodPost, "/cs", strings.NewReader(fmt.Sprintf(`{"security_profile":0, "location_id": "%s"}`, loc.Id)))
 	req.Header.Set("content-type", "application/json")
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
 
 	assert.Equal(t, http.StatusCreated, rr.Result().StatusCode)
-	b, err := io.ReadAll(rr.Result().Body)
 	require.NoError(t, err)
-	assert.Equal(t, "", string(b))
 }
 
 func TestValidationMiddlewareWithNonApiPath(t *testing.T) {
@@ -84,19 +81,10 @@ func TestValidationMiddlewareWithNonApiPath(t *testing.T) {
 }
 
 func TestValidationMiddlewareWithUnknownMethod(t *testing.T) {
-	engine := inmemory.NewStore(clock.RealClock{})
-
-	now := time.Now()
-	srv, err := api.NewServer(engine, clockTest.NewFakePassiveClock(now), nil)
-	require.NoError(t, err)
-
-	r := chi.NewRouter()
-	r.Use(api.ValidationMiddleware)
-	r.Mount("/", api.Handler(srv))
-	server := httptest.NewServer(r)
+	server, r, _, _ := setupServer(t)
 	defer server.Close()
 
-	req := httptest.NewRequest(http.MethodGet, "/cs/cs001", strings.NewReader(""))
+	req := httptest.NewRequest(http.MethodGet, "/register", strings.NewReader(""))
 	req.Header.Set("content-type", "application/json")
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)

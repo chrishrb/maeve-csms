@@ -3,7 +3,8 @@
 package store
 
 type Engine interface {
-	ChargeStationAuthStore
+	Store
+	ChargeStationStore
 	ChargeStationSettingsStore
 	ChargeStationRuntimeDetailsStore
 	ChargeStationInstallCertificatesStore

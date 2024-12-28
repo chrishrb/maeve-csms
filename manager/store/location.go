@@ -1,45 +1,30 @@
 package store
 
-import "golang.org/x/net/context"
+import "context"
 
 type GeoLocation struct {
-	Latitude  string
-	Longitude string
-}
-
-type Connector struct {
-	Format      string
-	Id          string
-	MaxAmperage int32
-	MaxVoltage  int32
-	PowerType   string
-	Standard    string
-	LastUpdated string
-}
-
-type Evse struct {
-	Connectors  []Connector
-	EvseId      *string
-	Status      string
-	Uid         string
-	LastUpdated string
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
 }
 
 type Location struct {
-	Address     string
-	City        string
-	Coordinates GeoLocation
-	Country     string
-	Evses       *[]Evse
-	Id          string
-	LastUpdated string
-	Name        string
-	ParkingType string
-	PostalCode  string
+	Address     string      `json:"address"`
+	City        string      `json:"city"`
+	Coordinates GeoLocation `json:"coordinates"`
+	Country     string      `json:"country"`
+	CountryCode string      `json:"country_code"`
+	Id          string      `json:"id"`
+	LastUpdated string      `json:"last_updated"`
+	Name        *string     `json:"name,omitempty"`
+	ParkingType *string     `json:"parking_type,omitempty"`
+	PostalCode  *string     `json:"postal_code,omitempty"`
+	PartyId     string      `json:"party_id"`
 }
 
 type LocationStore interface {
-	SetLocation(ctx context.Context, location *Location) error
+	CreateLocation(ctx context.Context, location *Location) (*Location, error)
+	UpdateLocation(ctx context.Context, locationId string, location *Location) (*Location, error)
+	DeleteLocation(ctx context.Context, locationId string) error
 	LookupLocation(ctx context.Context, locationId string) (*Location, error)
 	ListLocations(context context.Context, offset int, limit int) ([]*Location, error)
 }

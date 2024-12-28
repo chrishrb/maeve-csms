@@ -20,6 +20,7 @@ func TestSetAndLookupRegistrationDetails(t *testing.T) {
 	ctx := context.Background()
 
 	engine, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer engine.CloseConn()
 	require.NoError(t, err)
 
 	token := "abcdef123456"
@@ -42,6 +43,7 @@ func TestDeleteRegistrationDetails(t *testing.T) {
 	ctx := context.Background()
 
 	engine, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer engine.CloseConn()
 	require.NoError(t, err)
 
 	token := "abcdef123456"
@@ -66,6 +68,7 @@ func TestSetAndLookupPartyDetails(t *testing.T) {
 	ctx := context.Background()
 
 	engine, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer engine.CloseConn()
 	require.NoError(t, err)
 
 	want := &store.OcpiParty{
@@ -91,6 +94,7 @@ func TestSetAndListPartyDetails(t *testing.T) {
 	ctx := context.Background()
 
 	engine, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer engine.CloseConn()
 	require.NoError(t, err)
 
 	want := &store.OcpiParty{

@@ -3,35 +3,70 @@
 package firestore
 
 import (
-	"cloud.google.com/go/firestore"
 	"context"
 	"fmt"
+	"time"
+
+	"cloud.google.com/go/firestore"
+	"github.com/google/uuid"
 	"github.com/thoughtworks/maeve-csms/manager/store"
+	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"time"
 )
 
 type chargeStation struct {
-	SecurityProfile        int    `firestore:"prof"`
-	Base64SHA256Password   string `firestore:"pwd"`
-	InvalidUsernameAllowed bool   `firestore:"inv"`
+	Id                     string        `firestore:"id"`
+	LocationId             string        `firestore:"location_id"`
+	Evses                  *[]store.Evse `firestore:"evses"`
+	SecurityProfile        int           `firestore:"prof"`
+	Base64SHA256Password   string        `firestore:"pwd"`
+	InvalidUsernameAllowed bool          `firestore:"inv"`
 }
 
-func (s *Store) SetChargeStationAuth(ctx context.Context, chargeStationId string, auth *store.ChargeStationAuth) error {
-	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", chargeStationId))
+func (s *Store) CreateChargeStation(ctx context.Context, cs *store.ChargeStation) (*store.ChargeStation, error) {
+	id := uuid.NewString()
+	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", id))
+	cs.Id = id
 	_, err := csRef.Set(ctx, &chargeStation{
-		SecurityProfile:        int(auth.SecurityProfile),
-		Base64SHA256Password:   auth.Base64SHA256Password,
-		InvalidUsernameAllowed: auth.InvalidUsernameAllowed,
+		Id:                     cs.Id,
+		LocationId:             cs.LocationId,
+		Evses:                  cs.Evses,
+		SecurityProfile:        int(cs.SecurityProfile),
+		Base64SHA256Password:   cs.Base64SHA256Password,
+		InvalidUsernameAllowed: cs.InvalidUsernameAllowed,
 	})
+	if err != nil {
+		return nil, err
+	}
+	return s.LookupChargeStation(ctx, id)
+}
+
+func (s *Store) UpdateChargeStation(ctx context.Context, csId string, cs *store.ChargeStation) (*store.ChargeStation, error) {
+	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", csId))
+	_, err := csRef.Set(ctx, &chargeStation{
+		LocationId:             cs.LocationId,
+		Evses:                  cs.Evses,
+		SecurityProfile:        int(cs.SecurityProfile),
+		Base64SHA256Password:   cs.Base64SHA256Password,
+		InvalidUsernameAllowed: cs.InvalidUsernameAllowed,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return s.LookupChargeStation(ctx, csId)
+}
+
+func (s *Store) DeleteChargeStation(ctx context.Context, chargeStationId string) error {
+	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", chargeStationId))
+	_, err := csRef.Delete(ctx)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Store) LookupChargeStationAuth(ctx context.Context, chargeStationId string) (*store.ChargeStationAuth, error) {
+func (s *Store) LookupChargeStation(ctx context.Context, chargeStationId string) (*store.ChargeStation, error) {
 	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", chargeStationId))
 	snap, err := csRef.Get(ctx)
 	if err != nil {
@@ -44,11 +79,45 @@ func (s *Store) LookupChargeStationAuth(ctx context.Context, chargeStationId str
 	if err = snap.DataTo(&csData); err != nil {
 		return nil, fmt.Errorf("map charge station %s: %w", chargeStationId, err)
 	}
-	return &store.ChargeStationAuth{
+	return &store.ChargeStation{
+		Id:                     csData.Id,
+		LocationId:             csData.LocationId,
+		Evses:                  csData.Evses,
 		SecurityProfile:        store.SecurityProfile(csData.SecurityProfile),
 		Base64SHA256Password:   csData.Base64SHA256Password,
 		InvalidUsernameAllowed: csData.InvalidUsernameAllowed,
 	}, nil
+}
+
+func (s *Store) ListChargeStations(context context.Context, offset, limit int) ([]*store.ChargeStation, error) {
+	var chargeStations []*store.ChargeStation
+	iter := s.client.Collection("ChargeStation").OrderBy("Id", firestore.Asc).Offset(offset).Limit(limit).Documents(context)
+	for {
+		snap, err := iter.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return nil, fmt.Errorf("next chargeStation: %w", err)
+		}
+		var csData chargeStation
+		if err = snap.DataTo(&csData); err != nil {
+			return nil, fmt.Errorf("map chargeStation: %w", err)
+		}
+		cs := &store.ChargeStation{
+			Id:                     csData.Id,
+			LocationId:             csData.LocationId,
+			Evses:                  csData.Evses,
+			SecurityProfile:        store.SecurityProfile(csData.SecurityProfile),
+			Base64SHA256Password:   csData.Base64SHA256Password,
+			InvalidUsernameAllowed: csData.InvalidUsernameAllowed,
+		}
+		chargeStations = append(chargeStations, cs)
+	}
+	if chargeStations == nil {
+		chargeStations = make([]*store.ChargeStation, 0)
+	}
+	return chargeStations, nil
 }
 
 type chargeStationSetting struct {

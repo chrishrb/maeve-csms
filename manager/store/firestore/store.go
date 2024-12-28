@@ -26,3 +26,7 @@ func NewStore(ctx context.Context, gcloudProject string, clock clock.PassiveCloc
 		clock:  clock,
 	}, nil
 }
+
+func (s *Store) CloseConn() {
+	_ = s.client.Close()
+}

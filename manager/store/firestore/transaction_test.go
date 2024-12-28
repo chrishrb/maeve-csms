@@ -46,6 +46,7 @@ func TestFindTransactionDoesNotExist(t *testing.T) {
 	ctx := context.Background()
 
 	transactionStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer transactionStore.CloseConn()
 	require.NoError(t, err)
 
 	got, err := transactionStore.FindTransaction(ctx, "unknown", "ids")
@@ -59,6 +60,7 @@ func TestCreateAndFindTransaction(t *testing.T) {
 	ctx := context.Background()
 
 	transactionStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer transactionStore.CloseConn()
 	require.NoError(t, err)
 
 	meterValues := NewMeterValues(100)
@@ -87,6 +89,7 @@ func TestCreateTransactionWithExistingTransaction(t *testing.T) {
 	ctx := context.Background()
 
 	transactionStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer transactionStore.CloseConn()
 	require.NoError(t, err)
 
 	meterValues1 := NewMeterValues(100)
@@ -120,9 +123,10 @@ func TestTransactionStoreGetAllTransactions(t *testing.T) {
 	ctx := context.Background()
 
 	transactionStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer transactionStore.CloseConn()
 	require.NoError(t, err)
 
-	transactionsBefore, err := transactionStore.Transactions(ctx)
+	transactionsBefore, err := transactionStore.ListTransactions(ctx)
 	assert.NoError(t, err)
 
 	meterValues := NewMeterValues(100)
@@ -135,7 +139,7 @@ func TestTransactionStoreGetAllTransactions(t *testing.T) {
 	err = transactionStore.CreateTransaction(ctx, "cs006", "1236", idToken, tokenType, meterValues, 0, false)
 	assert.NoError(t, err)
 
-	transactionsAfter, err := transactionStore.Transactions(ctx)
+	transactionsAfter, err := transactionStore.ListTransactions(ctx)
 	assert.NoError(t, err)
 	got := len(transactionsAfter) - len(transactionsBefore)
 	assert.Equal(t, got, 3)
@@ -147,6 +151,7 @@ func TestTransactionStoreUpdateCreatedTransaction(t *testing.T) {
 	ctx := context.Background()
 
 	transactionStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer transactionStore.CloseConn()
 	require.NoError(t, err)
 
 	meterValues1 := NewMeterValues(100)
@@ -180,6 +185,7 @@ func TestTransactionStoreEndTransaction(t *testing.T) {
 	ctx := context.Background()
 
 	transactionStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer transactionStore.CloseConn()
 	require.NoError(t, err)
 
 	meterValues1 := NewMeterValues(100)
@@ -218,6 +224,7 @@ func TestTransactionStoreEndNonExistingTransaction(t *testing.T) {
 	ctx := context.Background()
 
 	transactionStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer transactionStore.CloseConn()
 	require.NoError(t, err)
 
 	meterValues := NewMeterValues(100)

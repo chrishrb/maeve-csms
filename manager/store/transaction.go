@@ -36,7 +36,7 @@ type UnitOfMeasure struct {
 }
 
 type TransactionStore interface {
-	Transactions(ctx context.Context) ([]*Transaction, error)
+	ListTransactions(ctx context.Context) ([]*Transaction, error)
 	FindTransaction(ctx context.Context, chargeStationId, transactionId string) (*Transaction, error)
 	CreateTransaction(ctx context.Context, chargeStationId, transactionId, idToken, tokenType string, meterValue []MeterValue, seqNo int, offline bool) error
 	UpdateTransaction(ctx context.Context, chargeStationId, transactionId string, meterValue []MeterValue) error

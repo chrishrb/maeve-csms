@@ -15,6 +15,7 @@ import (
 
 func TestNewStore(t *testing.T) {
 	store, err := firestore.NewStore(context.Background(), "myproject", clock.RealClock{})
+	defer store.CloseConn()
 	require.NoError(t, err)
 	assert.NotNil(t, store)
 }

@@ -15,15 +15,39 @@ const (
 	TLSWithClientSideCertificates
 )
 
-type ChargeStationAuth struct {
-	SecurityProfile        SecurityProfile
-	Base64SHA256Password   string
-	InvalidUsernameAllowed bool
+type Connector struct {
+	Id          string `json:"id"`
+	Format      string `json:"format"`
+	MaxAmperage int32  `json:"max_amperage"`
+	MaxVoltage  int32  `json:"max_voltage"`
+	PowerType   string `json:"power_type"`
+	Standard    string `json:"standard"`
+	LastUpdated string `json:"last_updated"`
 }
 
-type ChargeStationAuthStore interface {
-	SetChargeStationAuth(ctx context.Context, chargeStationId string, auth *ChargeStationAuth) error
-	LookupChargeStationAuth(ctx context.Context, chargeStationId string) (*ChargeStationAuth, error)
+type Evse struct {
+	Connectors  []Connector `json:"connectors"`
+	EvseId      *string     `json:"evse_id"`
+	Status      string      `json:"status"`
+	Uid         string      `json:"uid"`
+	LastUpdated string      `json:"last_updated"`
+}
+
+type ChargeStation struct {
+	Id                     string          `json:"id"`
+	LocationId             string          `json:"location_id"`
+	Evses                  *[]Evse         `json:"evses"`
+	SecurityProfile        SecurityProfile `json:"security_profile"`
+	Base64SHA256Password   string          `json:"base64_sha256_password"`
+	InvalidUsernameAllowed bool            `json:"invalid_username_allowed"`
+}
+
+type ChargeStationStore interface {
+	CreateChargeStation(ctx context.Context, cs *ChargeStation) (*ChargeStation, error)
+	UpdateChargeStation(ctx context.Context, csId string, cs *ChargeStation) (*ChargeStation, error)
+	DeleteChargeStation(ctx context.Context, csId string) error
+	LookupChargeStation(ctx context.Context, csId string) (*ChargeStation, error)
+	ListChargeStations(context context.Context, offset int, limit int) ([]*ChargeStation, error)
 }
 
 type ChargeStationSettingStatus string
@@ -48,10 +72,10 @@ type ChargeStationSettings struct {
 }
 
 type ChargeStationSettingsStore interface {
-	UpdateChargeStationSettings(ctx context.Context, chargeStationId string, settings *ChargeStationSettings) error
-	LookupChargeStationSettings(ctx context.Context, chargeStationId string) (*ChargeStationSettings, error)
+	UpdateChargeStationSettings(ctx context.Context, csId string, settings *ChargeStationSettings) error
+	LookupChargeStationSettings(ctx context.Context, csId string) (*ChargeStationSettings, error)
 	ListChargeStationSettings(ctx context.Context, pageSize int, previousChargeStationId string) ([]*ChargeStationSettings, error)
-	DeleteChargeStationSettings(ctx context.Context, chargeStationId string) error
+	DeleteChargeStationSettings(ctx context.Context, csId string) error
 }
 
 type ChargeStationRuntimeDetails struct {
@@ -59,8 +83,8 @@ type ChargeStationRuntimeDetails struct {
 }
 
 type ChargeStationRuntimeDetailsStore interface {
-	SetChargeStationRuntimeDetails(ctx context.Context, chargeStationId string, details *ChargeStationRuntimeDetails) error
-	LookupChargeStationRuntimeDetails(ctx context.Context, chargeStationId string) (*ChargeStationRuntimeDetails, error)
+	SetChargeStationRuntimeDetails(ctx context.Context, csId string, details *ChargeStationRuntimeDetails) error
+	LookupChargeStationRuntimeDetails(ctx context.Context, csId string) (*ChargeStationRuntimeDetails, error)
 }
 
 type CertificateType string
@@ -96,8 +120,8 @@ type ChargeStationInstallCertificates struct {
 }
 
 type ChargeStationInstallCertificatesStore interface {
-	UpdateChargeStationInstallCertificates(ctx context.Context, chargeStationId string, certificates *ChargeStationInstallCertificates) error
-	LookupChargeStationInstallCertificates(ctx context.Context, chargeStationId string) (*ChargeStationInstallCertificates, error)
+	UpdateChargeStationInstallCertificates(ctx context.Context, csId string, certificates *ChargeStationInstallCertificates) error
+	LookupChargeStationInstallCertificates(ctx context.Context, csId string) (*ChargeStationInstallCertificates, error)
 	ListChargeStationInstallCertificates(ctx context.Context, pageSize int, previousChargeStationId string) ([]*ChargeStationInstallCertificates, error)
 }
 
@@ -133,8 +157,8 @@ type ChargeStationTriggerMessage struct {
 }
 
 type ChargeStationTriggerMessageStore interface {
-	SetChargeStationTriggerMessage(ctx context.Context, chargeStationId string, triggerMessage *ChargeStationTriggerMessage) error
-	DeleteChargeStationTriggerMessage(ctx context.Context, chargeStationId string) error
-	LookupChargeStationTriggerMessage(ctx context.Context, chargeStationId string) (*ChargeStationTriggerMessage, error)
-	ListChargeStationTriggerMessages(ctx context.Context, pageSize int, previousChargeStationId string) ([]*ChargeStationTriggerMessage, error)
+	SetChargeStationTriggerMessage(ctx context.Context, csId string, triggerMessage *ChargeStationTriggerMessage) error
+	DeleteChargeStationTriggerMessage(ctx context.Context, csId string) error
+	LookupChargeStationTriggerMessage(ctx context.Context, csId string) (*ChargeStationTriggerMessage, error)
+	ListChargeStationTriggerMessages(ctx context.Context, pageSize int, previousCsId string) ([]*ChargeStationTriggerMessage, error)
 }

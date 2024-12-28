@@ -4,11 +4,11 @@ package api
 
 import "net/http"
 
-func (c ChargeStationAuth) Bind(r *http.Request) error {
+func (c ChargeStation) Bind(r *http.Request) error {
 	return nil
 }
 
-func (c ChargeStationAuth) Render(w http.ResponseWriter, r *http.Request) error {
+func (c ChargeStation) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
@@ -45,5 +45,9 @@ func (r Registration) Bind(req *http.Request) error {
 }
 
 func (r Location) Bind(req *http.Request) error {
+	return nil
+}
+
+func (t Location) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

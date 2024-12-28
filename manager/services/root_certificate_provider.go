@@ -9,15 +9,17 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
-	"go.opentelemetry.io/otel/codes"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
-	"go.opentelemetry.io/otel/trace"
 	"io"
-	"k8s.io/utils/clock"
+	"log/slog"
 	"net/http"
 	"os"
 	"sync"
 	"time"
+
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	"go.opentelemetry.io/otel/trace"
+	"k8s.io/utils/clock"
 )
 
 type RootCertificateProviderService interface {
@@ -180,7 +182,9 @@ func (s OpcpRootCertificateProviderService) ProvideCertificates(ctx context.Cont
 		}
 		cert, err := x509.ParseCertificate(certBytes)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse certificate %s: %w", certDetails.RootCertificateId, err)
+			// TODO: how to resolve this issue?
+			slog.Error("failed to parse certificate", "err", err)
+			continue
 		}
 		certs = append(certs, cert)
 	}

@@ -33,6 +33,7 @@ func TestSetAndLookupAndDeleteCertificate(t *testing.T) {
 	pemCertificate := string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
 
 	store, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer store.CloseConn()
 	require.NoError(t, err)
 
 	err = store.SetCertificate(ctx, pemCertificate)

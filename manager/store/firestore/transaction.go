@@ -58,7 +58,7 @@ func (s *Store) FindTransaction(ctx context.Context, chargeStationId, transactio
 	return &transaction, nil
 }
 
-func (s *Store) Transactions(ctx context.Context) ([]*store.Transaction, error) {
+func (s *Store) ListTransactions(ctx context.Context) ([]*store.Transaction, error) {
 	transactionRefs, err := s.client.Collection("Transaction").Documents(ctx).GetAll()
 	if err != nil {
 		return nil, fmt.Errorf("getting transactions: %w", err)

@@ -7,48 +7,90 @@ package firestore_test
 import (
 	"context"
 	"fmt"
-	"k8s.io/utils/clock"
-	clockTest "k8s.io/utils/clock/testing"
 	"testing"
 	"time"
+
+	"k8s.io/utils/clock"
+	clockTest "k8s.io/utils/clock/testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 	"github.com/thoughtworks/maeve-csms/manager/store/firestore"
+	"github.com/thoughtworks/maeve-csms/manager/testutil"
 )
 
-func TestSetAndLookupChargeStationAuth(t *testing.T) {
+func TestSetAndLookupChargeStation(t *testing.T) {
 	defer cleanupAllCollections(t, "myproject")
 
 	ctx := context.Background()
 
-	authStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	csStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer csStore.CloseConn()
 	require.NoError(t, err)
 
-	want := &store.ChargeStationAuth{
+	want := &store.ChargeStation{
+		LocationId: "location001",
+		Evses: &[]store.Evse{
+			{
+				Connectors: []store.Connector{
+					{
+						Format:      "Type2",
+						Id:          "1",
+						MaxAmperage: 32,
+						MaxVoltage:  400,
+						PowerType:   "AC",
+						Standard:    "IEC62196",
+						LastUpdated: time.Now().Format(time.RFC3339),
+					},
+				},
+				EvseId:      testutil.StringPtr("EVSE1"),
+				Status:      "Available",
+				Uid:         "UID1",
+				LastUpdated: time.Now().Format(time.RFC3339),
+			},
+			{
+				Connectors: []store.Connector{
+					{
+						Format:      "Type2",
+						Id:          "2",
+						MaxAmperage: 32,
+						MaxVoltage:  400,
+						PowerType:   "AC",
+						Standard:    "IEC62196",
+						LastUpdated: time.Now().Format(time.RFC3339),
+					},
+				},
+				EvseId:      testutil.StringPtr("EVSE2"),
+				Status:      "Available",
+				Uid:         "UID2",
+				LastUpdated: time.Now().Format(time.RFC3339),
+			},
+		},
 		SecurityProfile:      store.TLSWithClientSideCertificates,
 		Base64SHA256Password: "DEADBEEF",
 	}
 
-	err = authStore.SetChargeStationAuth(ctx, "cs001", want)
+	cs, err := csStore.CreateChargeStation(ctx, want)
 	require.NoError(t, err)
+	assert.NotEmpty(t, cs.Id)
 
-	got, err := authStore.LookupChargeStationAuth(ctx, "cs001")
+	got, err := csStore.LookupChargeStation(ctx, cs.Id)
 	require.NoError(t, err)
 
 	assert.Equal(t, want, got)
 }
 
-func TestLookupChargeStationAuthWithUnregisteredChargeStation(t *testing.T) {
+func TestLookupChargeStationWithUnregisteredChargeStation(t *testing.T) {
 	defer cleanupAllCollections(t, "myproject")
 
 	ctx := context.Background()
 
-	authStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	csStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer csStore.CloseConn()
 	require.NoError(t, err)
 
-	got, err := authStore.LookupChargeStationAuth(ctx, "not-created")
+	got, err := csStore.LookupChargeStation(ctx, "not-created")
 	require.NoError(t, err)
 	assert.Nil(t, got)
 }
@@ -60,6 +102,7 @@ func TestUpdateAndLookupChargeStationSettingsWithNewSettings(t *testing.T) {
 
 	now := time.Now()
 	settingsStore, err := firestore.NewStore(ctx, "myproject", clockTest.NewFakePassiveClock(now))
+	defer settingsStore.CloseConn()
 	require.NoError(t, err)
 
 	want := &store.ChargeStationSettings{
@@ -85,6 +128,7 @@ func TestUpdateAndLookupChargeStationSettingsWithUpdatedSettings(t *testing.T) {
 	ctx := context.Background()
 
 	settingsStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer settingsStore.CloseConn()
 	require.NoError(t, err)
 
 	want := &store.ChargeStationSettings{
@@ -126,6 +170,7 @@ func TestListChargeStationSettings(t *testing.T) {
 
 	now := time.Now()
 	settingsStore, err := firestore.NewStore(ctx, "myproject", clockTest.NewFakePassiveClock(now))
+	defer settingsStore.CloseConn()
 	require.NoError(t, err)
 
 	want := &store.ChargeStationSettings{
@@ -175,6 +220,7 @@ func TestUpdateAndLookupChargeStationInstallCertificates(t *testing.T) {
 	ctx := context.Background()
 
 	installCertsStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer installCertsStore.CloseConn()
 	require.NoError(t, err)
 
 	err = installCertsStore.UpdateChargeStationInstallCertificates(ctx, "cs001", &store.ChargeStationInstallCertificates{
@@ -241,6 +287,7 @@ func TestListChargeStationInstallCertificates(t *testing.T) {
 
 	now := time.Now()
 	certInstallStore, err := firestore.NewStore(ctx, "myproject", clockTest.NewFakePassiveClock(now))
+	defer certInstallStore.CloseConn()
 	require.NoError(t, err)
 
 	want := &store.ChargeStationInstallCertificates{
@@ -295,6 +342,7 @@ func TestSetAndLookupChargeStationRuntimeDetails(t *testing.T) {
 	ctx := context.Background()
 
 	detailsStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer detailsStore.CloseConn()
 	require.NoError(t, err)
 
 	want := &store.ChargeStationRuntimeDetails{
@@ -316,6 +364,7 @@ func TestLookupChargeStationRuntimeDetailsWithUnregisteredChargeStation(t *testi
 	ctx := context.Background()
 
 	detailsStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer detailsStore.CloseConn()
 	require.NoError(t, err)
 
 	got, err := detailsStore.LookupChargeStationRuntimeDetails(ctx, "not-created")
@@ -329,6 +378,7 @@ func TestListChargeStationTriggerMessages(t *testing.T) {
 	ctx := context.Background()
 
 	triggerStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer triggerStore.CloseConn()
 	require.NoError(t, err)
 
 	err = triggerStore.SetChargeStationTriggerMessage(ctx, "cs001", &store.ChargeStationTriggerMessage{

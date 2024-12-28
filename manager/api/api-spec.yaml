@@ -1,633 +1,660 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/OAI/OpenAPI-Specification/refs/heads/main/schemas/v3.1/schema.yaml
 openapi: "3.0.0"
 info:
-  version: "0.0.0"
-  title: "MaEVe CSMS"
-  description: "Internal API to interact with the MaEVe CSMS, external clients should use OCPI."
+  version: '0.0.0'
+  title: 'MaEVe CSMS'
+  description: 'Internal API to interact with the MaEVe CSMS, external clients should use OCPI.'
   contact:
-    name: "MaEVe team"
-    email: "maeve-team@thoughtworks.com"
+    name: 'MaEVe team'
+    email: 'maeve-team@thoughtworks.com'
   license:
-    name: "Apache 2.0"
+    name: 'Apache 2.0'
 servers:
   - url: http://localhost:9410/api/v0
     description: The local development server
 paths:
-  /cs/{csId}:
+  /cs:
+    get:
+      summary: List Charge Stations
+      tags:
+        - charge_station
+      description: Retrieve a list of charge stations with pagination.
+      operationId: 'listChargeStations'
+      parameters:
+        - required: false
+          in: 'query'
+          name: 'offset'
+          schema:
+            type: 'integer'
+            minimum: 0
+          description: The number of items to skip before starting to collect the result set.
+        - required: false
+          in: 'query'
+          name: 'limit'
+          schema:
+            type: 'integer'
+            minimum: 1
+            maximum: 100
+          description: The numbers of items to return.
+      responses:
+        '200':
+          description: A list of charge stations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChargeStation'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
     post:
-      summary: "Register a new charge station"
+      summary: 'Register a new charge station'
+      tags:
+        - charge_station
       description: |
         Registers a new charge station. The system will assume that the charge station
         has not yet been provisioned and will place the charge station into a pending state
         so it can been configured when it sends a boot notification.
-      operationId: "registerChargeStation"
+      operationId: 'registerChargeStation'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChargeStation'
+      responses:
+        '201':
+          description: 'Created'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+  /cs/{cs_id}:
+    get:
+      summary: Get Charge Station by ID
+      tags:
+        - charge_station
+      description: Retrieve details of a specific charge station by its ID.
+      operationId: 'lookupChargeStation'
       parameters:
-        - name: "csId"
-          in: "path"
-          description: "The charge station identifier"
+        - name: 'cs_id'
+          in: 'path'
+          description: 'The charge station identifier'
+          required: true
           schema:
-            type: "string"
+            type: 'string'
+            #TODO
+            #format: uuid
+      responses:
+        '200':
+          description: Charge station details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeStation'
+        '404':
+          description: 'Unknown charge station'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+    put:
+      summary: 'Update a charge station'
+      tags:
+        - charge_station
+      description: |
+        Update a charge station with given Id
+      operationId: 'updateChargeStation'
+      parameters:
+        - name: 'cs_id'
+          in: 'path'
+          description: 'The charge station identifier'
+          required: true
+          schema:
+            type: 'string'
             maxLength: 28
       requestBody:
         required: true
         content:
-          "application/json":
+          application/json:
             schema:
-              $ref: "#/components/schemas/ChargeStationAuth"
+              $ref: '#/components/schemas/ChargeStation'
       responses:
-        "201":
-          description: "Created"
-        default:
-          description: "Unexpected error"
+        '200':
+          description: Charge station details
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Status"
-  /cs/{csId}/reconfigure:
+                $ref: '#/components/schemas/ChargeStation'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+    delete:
+      summary: Delete Charge Station by ID
+      tags:
+        - charge_station
+      description: Delete a specific charge station by its ID.
+      operationId: 'deleteChargeStation'
+      parameters:
+        - name: 'cs_id'
+          in: 'path'
+          description: 'The charge station identifier'
+          required: true
+          schema:
+            type: 'string'
+            maxLength: 28
+      responses:
+        '204':
+          description: Charge station deleted
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+  /cs/{cs_id}/reconfigure:
     post:
-      summary: "Reconfigure the charge station"
+      summary: 'Reconfigure the charge station'
+      tags:
+        - charge_station
       description: |
         Supplies new configuration that should be applied to the charge station. This is not
         intended to be used as a general charge station provisioning mechanism, it is intended
         for one time changes required during testing. After reconfiguration, the charge station
         will be rebooted so the new configuration can take effect if instructed to.
-      operationId: "reconfigureChargeStation"
+      operationId: 'reconfigureChargeStation'
       parameters:
-        - name: "csId"
-          in: "path"
-          description: "The charge station identifier"
+        - name: 'cs_id'
+          in: 'path'
+          description: 'The charge station identifier'
+          required: true
           schema:
-            type: "string"
+            type: 'string'
             maxLength: 28
       requestBody:
         required: true
         content:
-          "application/json":
+          'application/json':
             schema:
-              $ref: "#/components/schemas/ChargeStationSettings"
+              $ref: '#/components/schemas/ChargeStationSettings'
       responses:
-        "200":
-          description: "OK"
+        '200':
+          description: 'OK'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
 
-  /cs/{csId}/certificates:
+  /cs/{cs_id}/certificates:
     post:
-      summary: "Install certificates on the charge station"
-      operationId: "installChargeStationCertificates"
+      summary: 'Install certificates on the charge station'
+      tags:
+        - charge_station
+      operationId: 'installChargeStationCertificates'
       parameters:
-        - name: "csId"
-          in: "path"
-          description: "The charge station identifier"
+        - name: 'cs_id'
+          in: 'path'
+          description: 'The charge station identifier'
+          required: true
           schema:
-            type: "string"
+            type: 'string'
             maxLength: 28
       requestBody:
         required: true
         content:
-          "application/json":
+          'application/json':
             schema:
-              $ref: "#/components/schemas/ChargeStationInstallCertificates"
+              $ref: '#/components/schemas/ChargeStationInstallCertificates'
       responses:
-        "200":
-          description: "OK"
+        '200':
+          description: 'OK'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Status"
-  /cs/{csId}/auth:
-    get:
-      summary: "Returns the authentication details"
-      description: |
-        Returns the details required by the CSMS gateway to determine how to authenticate
-        the charge station
-      operationId: "lookupChargeStationAuth"
-      parameters:
-        - name: "csId"
-          in: "path"
-          description: "The charge station identifier"
-          schema:
-            type: "string"
-            maxLength: 28
-      responses:
-        "200":
-          description: "Charge station auth response"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ChargeStationAuth"
-        "404":
-          description: "Unknown charge station"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Status"
-        default:
-          description: "Unexpected error"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Status"
-  /cs/{csId}/trigger:
+                $ref: '#/components/schemas/Status'
+  /cs/{cs_id}/trigger:
     post:
-      operationId: "triggerChargeStation"
+      operationId: 'triggerChargeStation'
+      tags:
+        - charge_station
       parameters:
-        - name: "csId"
-          in: "path"
-          description: "The charge station identifier"
+        - name: 'cs_id'
+          in: 'path'
+          description: 'The charge station identifier'
+          required: true
           schema:
-            type: "string"
+            type: 'string'
             maxLength: 28
       requestBody:
         required: true
         content:
-          "application/json":
+          'application/json':
             schema:
-              $ref: "#/components/schemas/ChargeStationTrigger"
+              $ref: '#/components/schemas/ChargeStationTrigger'
       responses:
-        "200":
-          description: "OK"
+        '200':
+          description: 'OK'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
   /token:
     post:
-      summary: "Create/update an authorization token"
+      summary: 'Create/update an authorization token'
+      tags:
+        - token
       description: |
         Creates or updates a token that can be used to authorize a charge
-      operationId: "setToken"
+      operationId: 'setToken'
       requestBody:
         required: true
         content:
-          "application/json":
+          'application/json':
             schema:
-              $ref: "#/components/schemas/Token"
+              $ref: '#/components/schemas/Token'
       responses:
-        "201":
-          description: "Created"
+        '201':
+          description: 'Created'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
     get:
-      summary: "List authorization tokens"
+      summary: 'List authorization tokens'
+      tags:
+        - token
       description: |
         Lists all tokens that can be used to authorize a charge
-      operationId: "listTokens"
+      operationId: 'listTokens'
       parameters:
         - required: false
-          in: "query"
-          name: "offset"
+          in: 'query'
+          name: 'offset'
           schema:
-            type: "integer"
+            type: 'integer'
             minimum: 0
+          description: The number of items to skip before starting to collect the result set.
         - required: false
-          in: "query"
-          name: "limit"
+          in: 'query'
+          name: 'limit'
           schema:
-            type: "integer"
+            type: 'integer'
             minimum: 1
             maximum: 100
+          description: The numbers of items to return.
       responses:
-        "200":
-          description: "List of tokens"
+        '200':
+          description: 'List of tokens'
           content:
-            "application/json":
+            'application/json':
               schema:
-                type: "array"
+                type: 'array'
                 items:
-                  $ref: "#/components/schemas/Token"
+                  $ref: '#/components/schemas/Token'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Status"
-  /token/{tokenUid}:
+                $ref: '#/components/schemas/Status'
+  /token/{token_uid}:
     get:
-      summary: "Lookup an authorization token"
+      summary: 'Lookup an authorization token'
+      tags:
+        - token
       description: |
         Lookup a token that can be used to authorize a charge
-      operationId: "lookupToken"
+      operationId: 'lookupToken'
       parameters:
         - required: true
-          in: "path"
-          name: "tokenUid"
+          in: 'path'
+          name: 'token_uid'
           schema:
-            type: "string"
+            type: 'string'
             maxLength: 36
       responses:
-        "200":
-          description: "Authorization token details"
+        '200':
+          description: 'Authorization token details'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Token"
-        "404":
-          description: "Not found"
+                $ref: '#/components/schemas/Token'
+        '404':
+          description: 'Not found'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
   /certificate:
     post:
-      summary: "Upload a certificate"
+      summary: 'Upload a certificate'
+      tags:
+        - certificate
       description: |
         Uploads a client certificate to the CSMS. The CSMS can use the certificate to authenticate
         the charge station using mutual TLS when the TLS operations are being offloaded to a load-balancer.
-      operationId: "uploadCertificate"
+      operationId: 'uploadCertificate'
       requestBody:
         required: true
         content:
-          "application/json":
+          'application/json':
             schema:
               $ref: '#/components/schemas/Certificate'
       responses:
-        "201":
-          description: "Created"
+        '201':
+          description: 'Created'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Status"
-  /certificate/{certificateHash}:
+                $ref: '#/components/schemas/Status'
+  /certificate/{certificate_hash}:
     get:
-      summary: "Lookup a certificate"
+      summary: 'Lookup a certificate'
+      tags:
+        - certificate
       description: |
         Lookup a client certificate that has been uploaded to the CSMS using a base64 encoded SHA-256 hash
         of the DER bytes.
-      operationId: "lookupCertificate"
+      operationId: 'lookupCertificate'
       parameters:
         - required: true
-          in: "path"
-          name: "certificateHash"
+          in: 'path'
+          name: 'certificate_hash'
           schema:
-            type: "string"
+            type: 'string'
             maxLength: 64
       responses:
-        "200":
-          description: "Certificate details"
+        '200':
+          description: 'Certificate details'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Certificate"
-        "404":
-          description: "Not found"
+                $ref: '#/components/schemas/Certificate'
+        '404':
+          description: 'Not found'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
     delete:
-      summary: "Delete a certificate"
+      summary: 'Delete a certificate'
+      tags:
+        - certificate
       description: |
         Deletes a client certificate that has been uploaded to the CSMS using a base64 encoded SHA-256 hash
         of the DER bytes.
-      operationId: "deleteCertificate"
+      operationId: 'deleteCertificate'
       parameters:
         - required: true
-          in: "path"
-          name: "certificateHash"
+          in: 'path'
+          name: 'certificate_hash'
           schema:
-            type: "string"
+            type: 'string'
             maxLength: 64
       responses:
-        "204":
-          description: "No content"
-        "404":
-          description: "Not found"
+        '204':
+          description: 'No content'
+        '404':
+          description: 'Not found'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
-            "application/json":
+            'application/json':
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
   /register:
     post:
-      summary: "Registers an OCPI party with the CSMS"
+      summary: 'Registers an OCPI party with the CSMS'
+      tags:
+        - ocpi
       description: |
         Registers an OCPI party with the CSMS. Depending on the configuration provided the CSMS will
         either initiate a registration with the party or the party will wait for the party to initiate 
         a registration with the CSMS.
-      operationId: "registerParty"
+      operationId: 'registerParty'
       requestBody:
         required: true
         content:
-          "application/json":
+          'application/json':
             schema:
-              $ref: "#/components/schemas/Registration"
+              $ref: '#/components/schemas/Registration'
       responses:
-        "201":
-          description: "Created"
+        '201':
+          description: 'Created'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Status"
-  /location/{locationId}:
+                $ref: '#/components/schemas/Status'
+  /location:
     post:
-      summary: "Registers a location with the CSMS"
+      summary: 'Registers a location with the CSMS'
+      tags:
+        - location
       description: |
         Registers a location with the CSMS.
-      operationId: "registerLocation"
-      parameters:
-        - name: "locationId"
-          in: "path"
-          description: "The location identifier"
-          schema:
-            type: "string"
-            maxLength: 64
+      operationId: 'registerLocation'
       requestBody:
         required: true
         content:
-          "application/json":
+          'application/json':
             schema:
-              $ref: "#/components/schemas/Location"
+              $ref: '#/components/schemas/Location'
       responses:
-        "201":
-          description: "Created"
+        '201':
+          description: 'Created'
         default:
-          description: "Unexpected error"
+          description: 'Unexpected error'
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Status"
+                $ref: '#/components/schemas/Status'
+    get:
+      summary: 'List locations'
+      tags:
+        - location
+      description: |
+        Retrieves a list of all locations registered with the CSMS.
+      operationId: 'ListLocations'
+      parameters:
+        - required: false
+          in: 'query'
+          name: 'offset'
+          schema:
+            type: 'integer'
+            minimum: 0
+          description: The number of items to skip before starting to collect the result set.
+        - required: false
+          in: 'query'
+          name: 'limit'
+          schema:
+            type: 'integer'
+            minimum: 1
+            maximum: 100
+          description: The numbers of items to return.
+      responses:
+        '200':
+          description: 'A list of locations'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Location'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+
+  /location/{locationId}:
+    get:
+      summary: 'Lookup a location by ID'
+      tags:
+        - location
+      description: |
+        Retrieves a specific location by its ID.
+      operationId: 'lookupLocation'
+      parameters:
+        - name: locationId
+          in: path
+          required: true
+          schema:
+            type: string
+            # TODO
+            #format: uuid
+      responses:
+        '200':
+          description: 'Location details'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Location'
+        '404':
+          description: 'Location not found'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+
+    put:
+      summary: 'Update a location'
+      tags:
+        - location
+      description: |
+        Updates a specific location by its ID.
+      operationId: 'updateLocation'
+      parameters:
+        - name: locationId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Location'
+      responses:
+        '200':
+          description: 'Location updated'
+        '404':
+          description: 'Location not found'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+
+    delete:
+      summary: 'Delete a location by ID'
+      tags:
+        - location
+      description: |
+        Deletes a specific location by its ID.
+      operationId: 'deleteLocation'
+      parameters:
+        - name: locationId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'Location deleted'
+        '404':
+          description: 'Location not found'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+
 components:
   schemas:
-    ChargeStationAuth:
-      type: "object"
-      description: "Connection details for a charge station"
+    ChargeStation:
+      type: object
+      description: Represents a charge station.
       required:
-        - "securityProfile"
+        - id
+        - security_profile
+        - location_id
       properties:
-        securityProfile:
-          type: "integer"
-          description: >
-            The security profile to use for the charge station:
-            * `0` - unsecured transport with basic auth
-            * `1` - TLS with basic auth
-            * `2` - TLS with client certificate
-        base64SHA256Password:
-          type: "string"
-          maxLength: 64
-          description: "The base64 encoded, SHA-256 hash of the charge station password"
-        invalidUsernameAllowed:
-          type: "boolean"
-          description: "If set to true then an invalid username will not prevent the charge station connecting"
-    ChargeStationSettings:
-      type: "object"
-      description: "Settings for a charge station"
-      additionalProperties:
-        type: "string"
-        description: |
-          The key is the name of the setting. For OCPP 2.0.1 the name should have the following pattern:
-          <component>/<variable>. The component name can include an optional component instance name and evse id
-          separated by semi-colons. The variable name can include an optional variable instance name and attribute
-          type separated by semi-colons. The maximum length for OCPP 1.6 is 500 characters.
-        maxLength: 1000
-    ChargeStationInstallCertificates:
-      type: "object"
-      description: |
-        The set of certificates to install on the charge station. The certificates will be sent
-        to the charge station asynchronously.
-      required:
-        - "certificates"
-      properties:
-        certificates:
-          type: "array"
-          items:
-            type: "object"
-            description: "The set of certificates to install"
-            required:
-              - "type"
-              - "certificate"
-            properties:
-              type:
-                type: "string"
-                enum:
-                  - V2G
-                  - MO
-                  - MF
-                  - CSMS
-              certificate:
-                type: "string"
-                description: "The PEM encoded certificate with newlines replaced by `\\n`"
-              status:
-                type: "string"
-                description: "The status, defaults to Pending"
-                enum:
-                  - Accepted
-                  - Rejected
-                  - Pending
-    ChargeStationTrigger:
-      type: "object"
-      description: "Trigger a charge station action"
-      required:
-        - "trigger"
-      properties:
-        trigger:
-          type: "string"
-          enum:
-            - "BootNotification"
-            - "StatusNotification"
-            - "SignV2GCertificate"
-            - "SignChargingStationCertificate"
-            - "SignCombinedCertificate"
-    Token:
-      type: "object"
-      description: "An authorization token"
-      required:
-        - countryCode
-        - partyId
-        - type
-        - uid
-        - contractId
-        - issuer
-        - valid
-        - cacheMode
-      properties:
-        countryCode:
-          type: "string"
-          minLength: 2
-          maxLength: 2
-          description: "The country code of the issuing eMSP"
-        partyId:
-          type: "string"
-          minLength: 3
-          maxLength: 3
-          description: "The party id of the issuing eMSP"
-        type:
-          type: "string"
-          enum:
-            - "AD_HOC_USER"
-            - "APP_USER"
-            - "OTHER"
-            - "RFID"
-          description: "The type of token"
-        uid:
-          type: "string"
-          description: "The unique token id"
-          maxLength: 36
-        contractId:
-          type: "string"
-          pattern: "([A-Za-z]{2})(-?)([A-Za-z]{3})(-?)([A-Za-z0-9]{9})(-?)([A-Za-z0-9])?"
-          description: "The contract ID (eMAID) associated with the token (with optional component separators)"
-        visualNumber:
-          type: "string"
-          description: "The visual/readable number/identification printed on an RFID card"
-        issuer:
-          type: "string"
-          description: "Issuing company, most of the times the name of the company printed on the RFID card, not necessarily the eMSP"
-        groupId:
-          type: "string"
-          maxLength: 36
-          description: "This id groups a couple of tokens to make two or more tokens work as one"
-        valid:
-          type: "boolean"
-          description: "Is this token valid"
-        languageCode:
-          type: "string"
-          minLength: 2
-          maxLength: 2
-          description: "The preferred language to use encoded as ISO 639-1 language code"
-        cacheMode:
-          type: "string"
-          enum:
-            - "ALWAYS"
-            - "ALLOWED"
-            - "ALLOWED_OFFLINE"
-            - "NEVER"
-          description: "Indicates what type of token caching is allowed"
-        lastUpdated:
-          type: "string"
-          format: "date-time"
-          description: "The date the record was last updated (ignored on create/update)"
-    Status:
-      type: "object"
-      description: "HTTP status"
-      required:
-        - "status"
-      properties:
-        status:
-          type: "string"
-          description: "The status description"
-        error:
-          type: "string"
-          description: "The error details"
-    Certificate:
-      type: "object"
-      description: "A client certificate"
-      required:
-        - "certificate"
-      properties:
-        certificate:
-          type: "string"
-          description: "The PEM encoded certificate with newlines replaced by `\\n`"
-    Registration:
-      type: "object"
-      description: "Defines the initial connection details for the OCPI registration process"
-      properties:
-        token:
-          type: "string"
-          maxLength: 64
-          description: "The token to use for communicating with the eMSP (CREDENTIALS_TOKEN_A)."
-        url:
-          type: "string"
-          format: "uri"
-          description: "The URL of the eMSP versions endpoint. If provided the CSMS will act as the sender of the versions request."
-        status:
-          type: "string"
-          enum:
-            - "PENDING"
-            - "REGISTERED"
-          description: |
-            The status of the registration request. If the request is marked as `REGISTERED` then the token will be allowed to
-            be used to access all endpoints avoiding the need for the OCPI registration process. If the request is marked as 
-            `PENDING` then the token will only be allowed to access the `/ocpi/versions`, `/ocpi/2.2` and `/ocpi/2.2/credentials`
-            endpoints.
-      required:
-        - token
-    Location:
-      type: "object"
-      description: "A charge station location"
-      required:
-        - "address"
-        - "city"
-        - "country"
-        - "country_code"
-        - "coordinates"
-        - "party_id"
-      properties:
-        country_code:
+        id:
           type: string
-        party_id:
+          description: Unique identifier for the charge station.
+          readOnly: true
+        location_id:
           type: string
-        name:
-          type: string
-          nullable: true
-        address:
-          type: string
-        city:
-          type: string
-        postal_code:
-          type: string
-          nullable: true
-        country:
-          type: string
-        coordinates:
-          $ref: '#/components/schemas/GeoLocation'
-        parking_type:
-          type: string
-          enum:
-            - ALONG_MOTORWAY
-            - PARKING_GARAGE
-            - PARKING_LOT
-            - ON_DRIVEWAY
-            - ON_STREET
-            - UNDERGROUND_GARAGE
-          nullable: true
+          description: Identifier for the location of the charge station.
         evses:
           type: array
           items:
             $ref: '#/components/schemas/Evse'
           nullable: true
-    GeoLocation:
-      required:
-        - latitude
-        - longitude
-      type: object
-      properties:
-        latitude:
-          type: string
-        longitude:
-          type: string
+          description: List of EVSEs available at the charge station.
+        security_profile:
+          type: 'integer'
+          description: >
+            The security profile to use for the charge station:
+            * `0` - unsecured transport with basic auth
+            * `1` - TLS with basic auth
+            * `2` - TLS with client certificate
+        base64_SHA256_password:
+          type: 'string'
+          maxLength: 64
+          description: 'The base64 encoded, SHA-256 hash of the charge station password'
+        invalid_username_allowed:
+          type: 'boolean'
+          description: 'If set to true then an invalid username will not prevent the charge station connecting'
     Evse:
       type: object
       properties:
@@ -639,10 +666,27 @@ components:
         evse_id:
           type: string
           nullable: true
+        status:
+          type: string
+          description: The current operational status of the EVSE.
+          enum:
+            - Available
+            - Occupied
+            - Reserved
+            - Faulted
+            - Unavailable
+            - Charging
+            - Finishing
+          example: 'Charging'
         connectors:
           type: array
           items:
             $ref: '#/components/schemas/Connector'
+        last_updated:
+          type: 'string'
+          format: 'date-time'
+          description: 'The date the record was last updated (ignored on create/update)'
+          example: '2024-12-27T12:00:00Z'
       required:
         - uid
         - status
@@ -717,8 +761,233 @@ components:
         max_amperage:
           type: integer
           format: int32
-
-
-
-
-
+        last_updated:
+          type: 'string'
+          format: 'date-time'
+          description: 'The date the record was last updated (ignored on create/update)'
+          example: '2024-12-27T12:00:00Z'
+    ChargeStationSettings:
+      type: 'object'
+      description: 'Settings for a charge station'
+      additionalProperties:
+        type: 'string'
+        description: |
+          The key is the name of the setting. For OCPP 2.0.1 the name should have the following pattern:
+          <component>/<variable>. The component name can include an optional component instance name and evse id
+          separated by semi-colons. The variable name can include an optional variable instance name and attribute
+          type separated by semi-colons. The maximum length for OCPP 1.6 is 500 characters.
+        maxLength: 1000
+    ChargeStationInstallCertificates:
+      type: 'object'
+      description: |
+        The set of certificates to install on the charge station. The certificates will be sent
+        to the charge station asynchronously.
+      required:
+        - certificates
+      properties:
+        certificates:
+          type: 'array'
+          items:
+            type: 'object'
+            description: 'The set of certificates to install'
+            required:
+              - type
+              - certificate
+            properties:
+              type:
+                type: 'string'
+                enum:
+                  - V2G
+                  - MO
+                  - MF
+                  - CSMS
+              certificate:
+                type: 'string'
+                description: "The PEM encoded certificate with newlines replaced by `\\n`"
+              status:
+                type: 'string'
+                description: 'The status, defaults to Pending'
+                enum:
+                  - Accepted
+                  - Rejected
+                  - Pending
+    ChargeStationTrigger:
+      type: 'object'
+      description: 'Trigger a charge station action'
+      required:
+        - trigger
+      properties:
+        trigger:
+          type: 'string'
+          enum:
+            - 'BootNotification'
+            - 'StatusNotification'
+            - 'SignV2GCertificate'
+            - 'SignChargingStationCertificate'
+            - 'SignCombinedCertificate'
+    Token:
+      type: 'object'
+      description: 'An authorization token'
+      required:
+        - country_code
+        - party_id
+        - type
+        - uid
+        - contract_id
+        - issuer
+        - valid
+        - cache_mode
+      properties:
+        country_code:
+          type: 'string'
+          minLength: 2
+          maxLength: 2
+          description: 'The country code of the issuing eMSP'
+        party_id:
+          type: 'string'
+          minLength: 3
+          maxLength: 3
+          description: 'The party id of the issuing eMSP'
+        type:
+          type: 'string'
+          enum:
+            - 'AD_HOC_USER'
+            - 'APP_USER'
+            - 'OTHER'
+            - 'RFID'
+          description: 'The type of token'
+        uid:
+          type: 'string'
+          description: 'The unique token id'
+          maxLength: 36
+        contract_id:
+          type: 'string'
+          pattern: '([A-Za-z]{2})(-?)([A-Za-z]{3})(-?)([A-Za-z0-9]{9})(-?)([A-Za-z0-9])?'
+          description: 'The contract ID (eMAID) associated with the token (with optional component separators)'
+        visual_number:
+          type: 'string'
+          description: 'The visual/readable number/identification printed on an RFID card'
+        issuer:
+          type: 'string'
+          description: 'Issuing company, most of the times the name of the company printed on the RFID card, not necessarily the eMSP'
+        group_id:
+          type: 'string'
+          maxLength: 36
+          description: 'This id groups a couple of tokens to make two or more tokens work as one'
+        valid:
+          type: 'boolean'
+          description: 'Is this token valid'
+        language_code:
+          type: 'string'
+          minLength: 2
+          maxLength: 2
+          description: 'The preferred language to use encoded as ISO 639-1 language code'
+        cache_mode:
+          type: 'string'
+          enum:
+            - 'ALWAYS'
+            - 'ALLOWED'
+            - 'ALLOWED_OFFLINE'
+            - 'NEVER'
+          description: 'Indicates what type of token caching is allowed'
+        last_updated:
+          type: 'string'
+          format: 'date-time'
+          description: 'The date the record was last updated (ignored on create/update)'
+    Status:
+      type: 'object'
+      description: 'HTTP status'
+      required:
+        - status
+      properties:
+        status:
+          type: 'string'
+          description: 'The status description'
+        error:
+          type: 'string'
+          description: 'The error details'
+    Certificate:
+      type: 'object'
+      description: 'A client certificate'
+      required:
+        - certificate
+      properties:
+        certificate:
+          type: 'string'
+          description: "The PEM encoded certificate with newlines replaced by `\\n`"
+    Registration:
+      type: 'object'
+      description: 'Defines the initial connection details for the OCPI registration process'
+      properties:
+        token:
+          type: 'string'
+          maxLength: 64
+          description: 'The token to use for communicating with the eMSP (CREDENTIALS_TOKEN_A).'
+        url:
+          type: 'string'
+          format: 'uri'
+          description: 'The URL of the eMSP versions endpoint. If provided the CSMS will act as the sender of the versions request.'
+        status:
+          type: 'string'
+          enum:
+            - 'PENDING'
+            - 'REGISTERED'
+          description: |
+            The status of the registration request. If the request is marked as `REGISTERED` then the token will be allowed to
+            be used to access all endpoints avoiding the need for the OCPI registration process. If the request is marked as 
+            `PENDING` then the token will only be allowed to access the `/ocpi/versions`, `/ocpi/2.2` and `/ocpi/2.2/credentials`
+            endpoints.
+      required:
+        - token
+    Location:
+      type: 'object'
+      description: 'A charge station location'
+      required:
+        - address
+        - city
+        - country
+        - country_code
+        - coordinates
+        - party_id
+      properties:
+        id:
+          type: string
+          readOnly: true
+        country_code:
+          type: string
+        party_id:
+          type: string
+        name:
+          type: string
+          nullable: true
+        address:
+          type: string
+        city:
+          type: string
+        postal_code:
+          type: string
+          nullable: true
+        country:
+          type: string
+        coordinates:
+          $ref: '#/components/schemas/GeoLocation'
+        parking_type:
+          type: string
+          enum:
+            - ALONG_MOTORWAY
+            - PARKING_GARAGE
+            - PARKING_LOT
+            - ON_DRIVEWAY
+            - ON_STREET
+            - UNDERGROUND_GARAGE
+          nullable: true
+    GeoLocation:
+      required:
+        - latitude
+        - longitude
+      type: object
+      properties:
+        latitude:
+          type: string
+        longitude:
+          type: string

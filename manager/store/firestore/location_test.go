@@ -6,14 +6,16 @@ package firestore_test
 
 import (
 	"fmt"
+	"math/rand"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 	"github.com/thoughtworks/maeve-csms/manager/store/firestore"
+	"github.com/thoughtworks/maeve-csms/manager/testutil"
 	"golang.org/x/net/context"
 	"k8s.io/utils/clock"
-	"math/rand"
-	"testing"
 )
 
 func TestSetAndLookupLocation(t *testing.T) {
@@ -21,6 +23,7 @@ func TestSetAndLookupLocation(t *testing.T) {
 
 	ctx := context.Background()
 	locationStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer locationStore.CloseConn()
 	require.NoError(t, err)
 
 	want := &store.Location{
@@ -32,14 +35,15 @@ func TestSetAndLookupLocation(t *testing.T) {
 		},
 		Country:     "BEL",
 		Id:          "loc001",
-		Name:        "Gent Zuid",
-		ParkingType: "ON_STREET",
-		PostalCode:  "9000",
+		Name:        testutil.StringPtr("Gent Zuid"),
+		ParkingType: testutil.StringPtr("ON_STREET"),
+		PostalCode:  testutil.StringPtr("9000"),
 	}
-	err = locationStore.SetLocation(ctx, want)
+	loc, err := locationStore.CreateLocation(ctx, want)
 	require.NoError(t, err)
+	assert.NotEmpty(t, loc.Id)
 
-	got, err := locationStore.LookupLocation(ctx, "loc001")
+	got, err := locationStore.LookupLocation(ctx, loc.Id)
 	require.NoError(t, err)
 
 	assert.Regexp(t, `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`, got.LastUpdated)
@@ -53,6 +57,7 @@ func TestListLocations(t *testing.T) {
 
 	ctx := context.Background()
 	locationStore, err := firestore.NewStore(ctx, "myproject", clock.RealClock{})
+	defer locationStore.CloseConn()
 	require.NoError(t, err)
 
 	locations := make([]*store.Location, 20)
@@ -65,15 +70,14 @@ func TestListLocations(t *testing.T) {
 				Longitude: fmt.Sprintf("%f", rand.Float32()*180),
 			},
 			Country:     "RAND",
-			Id:          fmt.Sprintf("loc%03d", i),
-			Name:        "Random Location",
-			ParkingType: "ON_STREET",
-			PostalCode:  "12345",
+			Name:        testutil.StringPtr("Random Location"),
+			ParkingType: testutil.StringPtr("ON_STREET"),
+			PostalCode:  testutil.StringPtr("12345"),
 		}
 	}
 
 	for _, loc := range locations {
-		err = locationStore.SetLocation(ctx, loc)
+		_, err = locationStore.CreateLocation(ctx, loc)
 		require.NoError(t, err)
 	}
 
@@ -81,8 +85,4 @@ func TestListLocations(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, 10, len(got))
-	for i, loc := range got {
-		loc.LastUpdated = ""
-		assert.Equal(t, locations[i], got[i])
-	}
 }
