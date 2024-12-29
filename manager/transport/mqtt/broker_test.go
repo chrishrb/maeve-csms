@@ -37,9 +37,7 @@ func TestNewBroker(t *testing.T) {
 		ConnectRetryDelay: 10,
 		OnConnectionUp: func(manager *autopaho.ConnectionManager, connack *paho.Connack) {
 			_, err = manager.Subscribe(ctx, &paho.Subscribe{
-				Subscriptions: map[string]paho.SubscribeOptions{
-					"test/#": {},
-				},
+				Subscriptions: []paho.SubscribeOptions{{Topic: "test/#"}},
 			})
 			if err != nil {
 				t.Fatalf("subscribing to messages: %v", err)

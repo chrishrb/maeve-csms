@@ -42,13 +42,13 @@ func NewApiHandler(settings config.ApiSettings, engine store.Engine, ocpi ocpi.A
 	r := chi.NewRouter()
 
 	logger := middleware.RequestLogger(logFormatter{})
+  apiBasePath := "/api/v0"
 
-	r.Use(middleware.Recoverer, secureMiddleware.Handler, cors.Default().Handler, api.ValidationMiddleware)
+	r.Use(middleware.Recoverer, secureMiddleware.Handler, cors.Default().Handler)
 	r.Get("/health", health)
-	r.Get("/transactions", transactions(engine))
 	r.Handle("/metrics", promhttp.Handler())
 	r.Get("/api/openapi.json", getApiSwaggerJson)
-	r.With(logger).Mount("/api/v0", api.Handler(apiServer))
+	r.With(logger, api.ValidationMiddleware(apiBasePath).Handler).Mount(apiBasePath, api.Handler(apiServer))
 	return r
 }
 
@@ -69,22 +69,4 @@ func getApiSwaggerJson(w http.ResponseWriter, r *http.Request) {
 func health(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write([]byte(`{"status":"OK"}`))
-}
-
-func transactions(transactionStore store.Engine) func(w http.ResponseWriter, r *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ts, err := transactionStore.ListTransactions(r.Context())
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-
-		t := template.Must(template.New("").Parse(templates.Transactions))
-		err = t.Execute(w, ts)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		w.WriteHeader(http.StatusOK)
-	}
 }

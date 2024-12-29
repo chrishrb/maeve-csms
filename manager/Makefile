@@ -1,12 +1,12 @@
 GOCMD=go
 
 .PHONY: all
-all: generate build format lint test ## Format, lint and build
+all: generate build format lint gosec integration ## Format, lint, build and test
 
 .PHONY: init
 init: ## Init
 	go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
-	npm install -g widdershins
+	go install github.com/securego/gosec/v2/cmd/gosec@latest
 
 .PHONY: build
 run: ## Build
@@ -28,6 +28,10 @@ test: ## Test
 .PHONY: integration
 integration: ## Run unit and integration tests
 	${GOCMD} test -tags=integration ./...
+
+.PHONY: gosec
+gosec: ## Run unit and integration tests
+	gosec ./...
 
 .PHONY: format
 format: ## Format code

@@ -3,22 +3,31 @@
 package api
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/go-chi/render"
-	"net/http"
-	"strings"
 )
 
-func ValidationMiddleware(next http.Handler) http.Handler {
+type Middleware struct {
+  baseUrl string
+}
+
+func ValidationMiddleware(baseUrl string) *Middleware {
+  return &Middleware{baseUrl: baseUrl}
+}
+
+func (m *Middleware) Handler(next http.Handler) http.Handler {
 	swagger, err := GetSwagger()
 	if err != nil {
 		panic(err)
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		matchedPath, pathParams := matchPath(r, swagger)
+		matchedPath, pathParams := matchPath(r, swagger, m.baseUrl)
 		if matchedPath != nil {
 			pathItem := swagger.Paths.Find(*matchedPath)
 			operation := pathItem.Operations()[r.Method]
@@ -47,9 +56,10 @@ func ValidationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func matchPath(r *http.Request, swagger *openapi3.T) (*string, map[string]string) {
+func matchPath(r *http.Request, swagger *openapi3.T, basePath string) (*string, map[string]string) {
 	pathParams := make(map[string]string)
-	requestElements := strings.Split(r.RequestURI, "/")
+  requestPath := strings.TrimPrefix(r.URL.Path, basePath)
+	requestElements := strings.Split(requestPath, "/")
 
 	for _, path := range swagger.Paths.InMatchingOrder() {
 		match := true

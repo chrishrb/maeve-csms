@@ -90,9 +90,7 @@ func (l *Listener) Connect(ctx context.Context, ocppVersion transport.OcppVersio
 		ConnectRetryDelay: l.mqttConnectRetryDelay,
 		OnConnectionUp: func(manager *autopaho.ConnectionManager, connack *paho.Connack) {
 			_, err := manager.Subscribe(ctx, &paho.Subscribe{
-				Subscriptions: map[string]paho.SubscribeOptions{
-					topic: {},
-				},
+				Subscriptions: []paho.SubscribeOptions{{Topic: topic}},
 			})
 			if err != nil {
 				slog.Error("failed to subscribe to topic", "topic", topic)

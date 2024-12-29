@@ -6,6 +6,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"net/url"
+	"os"
+	"time"
+
 	"github.com/subnova/slog-exporter/slogtrace"
 	"github.com/thoughtworks/maeve-csms/manager/handlers/ocpp16"
 	"github.com/thoughtworks/maeve-csms/manager/handlers/ocpp201"
@@ -20,6 +25,7 @@ import (
 	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -30,10 +36,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"k8s.io/utils/clock"
-	"net/http"
-	"net/url"
-	"os"
-	"time"
 )
 
 type ApiSettings struct {
@@ -503,6 +505,10 @@ func getMsgListener(cfg *TransportConfig, tracer oteltrace.Tracer) (transport.Li
 	}
 }
 
+func attributeFilter(_ attribute.KeyValue) bool {
+	return true
+}
+
 func getTracerProvider(ctx context.Context, collectorAddr string) (*trace.TracerProvider, error) {
 	var err error
 	var res *resource.Resource
@@ -523,10 +529,9 @@ func getTracerProvider(ctx context.Context, collectorAddr string) (*trace.Tracer
 
 		ctx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		conn, err := grpc.DialContext(ctx, collectorAddr,
+		conn, err := grpc.NewClient(collectorAddr,
 			// Note the use of insecure transport here. TLS is recommended in production.
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithBlock(),
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
@@ -543,7 +548,7 @@ func getTracerProvider(ctx context.Context, collectorAddr string) (*trace.Tracer
 			return nil, fmt.Errorf("failed to create resource: %w", err)
 		}
 
-		traceExporter, err = slogtrace.New()
+		traceExporter, err = slogtrace.New(attributeFilter)
 		if err != nil {
 			return nil, err
 		}

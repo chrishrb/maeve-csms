@@ -21,7 +21,7 @@ func (s *Store) CreateChargeStation(ctx context.Context, cs *store.ChargeStation
 	cs.Id = id
 	_, err := csRef.Set(ctx, &cs)
 	if err != nil {
-		return nil, fmt.Errorf("setting cs %s: %w", id, err) 
+		return nil, fmt.Errorf("setting cs %s: %w", id, err)
 	}
 	return s.LookupChargeStation(ctx, id)
 }
@@ -30,7 +30,7 @@ func (s *Store) UpdateChargeStation(ctx context.Context, csId string, cs *store.
 	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", csId))
 	_, err := csRef.Set(ctx, &cs)
 	if err != nil {
-		return nil, fmt.Errorf("setting cs %s: %w", csId, err) 
+		return nil, fmt.Errorf("setting cs %s: %w", csId, err)
 	}
 	return s.LookupChargeStation(ctx, csId)
 }
@@ -57,7 +57,7 @@ func (s *Store) LookupChargeStation(ctx context.Context, chargeStationId string)
 	if err = snap.DataTo(&cs); err != nil {
 		return nil, fmt.Errorf("map charge station %s: %w", chargeStationId, err)
 	}
-  return &cs, nil
+	return &cs, nil
 }
 
 func (s *Store) ListChargeStations(context context.Context, offset, limit int) ([]*store.ChargeStation, error) {
@@ -71,7 +71,7 @@ func (s *Store) ListChargeStations(context context.Context, offset, limit int) (
 		if err != nil {
 			return nil, fmt.Errorf("next chargeStation: %w", err)
 		}
-	  var cs store.ChargeStation
+		var cs store.ChargeStation
 		if err = snap.DataTo(&cs); err != nil {
 			return nil, fmt.Errorf("map chargeStation: %w", err)
 		}

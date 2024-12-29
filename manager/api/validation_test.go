@@ -10,20 +10,37 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thoughtworks/maeve-csms/manager/api"
+	"github.com/thoughtworks/maeve-csms/manager/ocpi"
 	"github.com/thoughtworks/maeve-csms/manager/store"
+	"github.com/thoughtworks/maeve-csms/manager/store/inmemory"
 	"github.com/thoughtworks/maeve-csms/manager/testutil"
+	"k8s.io/utils/clock"
+	clockTest "k8s.io/utils/clock/testing"
 )
 
 func TestValidationMiddlewareWithInvalidRequest(t *testing.T) {
-	server, r, _, _ := setupServer(t)
+	engine := inmemory.NewStore(clock.RealClock{})
+	ocpiApi := ocpi.NewOCPI(engine, nil, "GB", "TWK")
+
+	now := time.Now().UTC()
+	c := clockTest.NewFakePassiveClock(now)
+	srv, err := api.NewServer(engine, c, ocpiApi)
+	require.NoError(t, err)
+
+	r := chi.NewRouter()
+  basePath := "/api/v0"
+	r.Use(api.ValidationMiddleware(basePath).Handler)
+	r.Mount(basePath, api.Handler(srv))
+	server := httptest.NewServer(r)
 	defer server.Close()
 
-	req := httptest.NewRequest(http.MethodPost, "/cs", strings.NewReader(""))
+	req := httptest.NewRequest(http.MethodPost, "/api/v0/cs", strings.NewReader(""))
 	req.Header.Set("content-type", "application/json")
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
@@ -65,7 +82,7 @@ func TestValidationMiddlewareWithValidRequest(t *testing.T) {
 
 func TestValidationMiddlewareWithNonApiPath(t *testing.T) {
 	r := chi.NewRouter()
-	r.Use(api.ValidationMiddleware)
+	r.Use(api.ValidationMiddleware("/").Handler)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte(`{"status":"OK"}`))
 	})

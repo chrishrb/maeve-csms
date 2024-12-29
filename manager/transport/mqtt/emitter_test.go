@@ -206,9 +206,13 @@ func listenForMessageSentByManager(t *testing.T, ctx context.Context, clientUrl 
 		ConnectRetryDelay: 10,
 		OnConnectionUp: func(manager *autopaho.ConnectionManager, connack *paho.Connack) {
 			_, err := manager.Subscribe(context.Background(), &paho.Subscribe{
-				Subscriptions: map[string]paho.SubscribeOptions{
-					"cs/out/ocpp1.6/cs001":   {},
-					"cs/out/ocpp2.0.1/cs001": {},
+				Subscriptions: []paho.SubscribeOptions{
+					{
+						Topic: "cs/out/ocpp1.6/cs001",
+					},
+					{
+						Topic: "cs/out/ocpp2.0.1/cs001",
+					},
 				},
 			})
 			require.NoError(t, err)
