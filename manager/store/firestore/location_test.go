@@ -66,8 +66,8 @@ func TestListLocations(t *testing.T) {
 			Address: "Randomstreet 3A",
 			City:    "Randomtown",
 			Coordinates: store.GeoLocation{
-				Latitude:  rand.Float32()*90,
-				Longitude: rand.Float32()*180,
+				Latitude:  rand.Float32() * 90,
+				Longitude: rand.Float32() * 180,
 			},
 			Country:     "RAND",
 			Name:        testutil.StringPtr("Random Location"),

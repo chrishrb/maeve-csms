@@ -3,10 +3,10 @@
 package server
 
 import (
-	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/rs/cors"
 	"github.com/thoughtworks/maeve-csms/manager/handlers/ocpp16"
 	"github.com/thoughtworks/maeve-csms/manager/ocpi"
