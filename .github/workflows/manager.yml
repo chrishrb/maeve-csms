@@ -29,16 +29,27 @@ jobs:
         cache: true
         # Used to specify the path to a dependency file - go.sum
         cache-dependency-path: ${{env.SERVICE}}/go.sum
-    - name: Run Gosec Security Scanner
+    - name: Format
       run: |
-        go install github.com/securego/gosec/v2/cmd/gosec@latest
-        gosec -exclude-generated ./...
+        DIFF="$(gofmt -d .)"
+        if [[ -n $DIFF ]]; then
+          echo "$DIFF"
+          echo "please run gofmt"
+          exit 1
+        fi
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v6
+      with:
+        version: v1.60
+    - name: Run Gosec Security Scanner
+      uses: securego/gosec@
+      with:
+        args: ./...
     - name: Test & Coverage
       run: |
         go test ./... -coverprofile=coverage.out
         go tool cover -html=coverage.out -o cover.html
-        # Temporarily disable integration test: https://github.com/moby/moby/issues/45935
-        # go test ./store/... --tags=integration
+        go test ./store/... --tags=integration
     - uses: actions/upload-artifact@v3
       with:
         name: code-coverage

@@ -16,4 +16,4 @@ setup-contract:
 
 .PHONY: register-cs
 register-cs:
-	curl -i http://localhost:9410/api/v0/cs/cs001 -H 'content-type: application/json' -d '{"securityProfile":2}'
+	bash everest/scripts/setup-env.sh

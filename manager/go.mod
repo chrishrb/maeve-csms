@@ -5,7 +5,6 @@ go 1.23
 require (
 	cloud.google.com/go/firestore v1.17.0
 	cloud.google.com/go/secretmanager v1.14.2
-	github.com/deepmap/oapi-codegen v1.16.3
 	github.com/eclipse/paho.golang v0.22.0
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/go-chi/chi/v5 v5.2.0
@@ -15,6 +14,7 @@ require (
 	github.com/huandu/go-clone/generic v1.7.2
 	github.com/lestrrat-go/jwx v1.2.29
 	github.com/mochi-co/mqtt/v2 v2.2.16
+	github.com/oapi-codegen/nethttp-middleware v1.0.2
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pelletier/go-toml/v2 v2.2.3
 	github.com/prometheus/client_golang v1.20.5

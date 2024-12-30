@@ -21,7 +21,7 @@ type ChargeStationAuthDetailsResponse struct {
 }
 
 func (r RemoteRegistry) LookupChargeStation(clientId string) (*ChargeStation, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v0/cs/%s/auth", r.ManagerApiAddr, clientId), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v0/cs/%s", r.ManagerApiAddr, clientId), nil)
 	if err != nil {
 		return nil, fmt.Errorf("creating http request: %w", err)
 	}

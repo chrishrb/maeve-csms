@@ -989,5 +989,7 @@ components:
       properties:
         latitude:
           type: string
+          format: float
         longitude:
           type: string
+          format: float

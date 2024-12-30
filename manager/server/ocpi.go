@@ -3,7 +3,7 @@
 package server
 
 import (
-	oapimiddleware "github.com/deepmap/oapi-codegen/pkg/chi-middleware"
+	oapimiddleware "github.com/oapi-codegen/nethttp-middleware"
 	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
