@@ -2,14 +2,73 @@ name: Manager
 
 on:
   push:
-    branches: [ '*' ]
+    branches: ['*']
     paths:
-      - "manager/**"
-      - ".github/workflows/manager.yml"
+      - 'manager/**'
+      - '.github/workflows/manager.yml'
 env:
   SERVICE: manager
 
+permissions:
+  contents: read
+
 jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Go environment
+        uses: actions/setup-go@v4.0.1
+        with:
+          # Path to the go.mod or go.work file.
+          go-version-file: ${{env.SERVICE}}/go.mod
+          # Set this option to true if you want the action to always check for the latest available version that satisfies the version spec
+          check-latest: false
+          # Used to specify whether caching is needed. Set to true, if you'd like to enable caching.
+          cache: true
+          # Used to specify the path to a dependency file - go.sum
+          cache-dependency-path: ${{env.SERVICE}}/go.sum
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.60
+          working-directory: ./${{env.SERVICE}}
+
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./${{env.SERVICE}}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Go environment
+        uses: actions/setup-go@v4.0.1
+        with:
+          # Path to the go.mod or go.work file.
+          go-version-file: ${{env.SERVICE}}/go.mod
+          # Set this option to true if you want the action to always check for the latest available version that satisfies the version spec
+          check-latest: false
+          # Used to specify whether caching is needed. Set to true, if you'd like to enable caching.
+          cache: true
+          # Used to specify the path to a dependency file - go.sum
+          cache-dependency-path: ${{env.SERVICE}}/go.sum
+      - name: Format
+        run: |
+          DIFF="$(gofmt -d .)"
+          if [[ -n $DIFF ]]; then
+            echo "$DIFF"
+            echo "please run gofmt"
+            exit 1
+          fi
+      - name: Test & Coverage
+        run: |
+          go test ./... --tags=integration -coverprofile=coverage.out
+          go tool cover -html=coverage.out -o cover.html
+      - uses: actions/upload-artifact@v3
+        with:
+          name: code-coverage
+          path: ${{env.SERVICE}}/cover.html
 
   build:
     runs-on: ubuntu-latest
@@ -17,48 +76,27 @@ jobs:
       run:
         working-directory: ./${{env.SERVICE}}
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup Go environment
-      uses: actions/setup-go@v4.0.1
-      with:
-        # Path to the go.mod or go.work file.
-        go-version-file: ${{env.SERVICE}}/go.mod
-        # Set this option to true if you want the action to always check for the latest available version that satisfies the version spec
-        check-latest: false
-        # Used to specify whether caching is needed. Set to true, if you'd like to enable caching.
-        cache: true
-        # Used to specify the path to a dependency file - go.sum
-        cache-dependency-path: ${{env.SERVICE}}/go.sum
-    - name: Format
-      run: |
-        DIFF="$(gofmt -d .)"
-        if [[ -n $DIFF ]]; then
-          echo "$DIFF"
-          echo "please run gofmt"
-          exit 1
-        fi
-    - name: golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: v1.60
-        working-directory: ./${{env.SERVICE}}
-    - name: Test & Coverage
-      run: |
-        go test ./... -coverprofile=coverage.out
-        go tool cover -html=coverage.out -o cover.html
-        go test ./store/... --tags=integration
-    - uses: actions/upload-artifact@v3
-      with:
-        name: code-coverage
-        path: ${{env.SERVICE}}/cover.html
-    - name: Build the Docker image
-      run: |
-        docker build . \
-          --file Dockerfile \
-          --tag ${{env.SERVICE}}:${{ github.sha }} \
-          --build-arg TARGETARCH=amd64
-      env:
-        DOCKER_BUILDKIT: 1
+      - uses: actions/checkout@v3
+      - name: Setup Go environment
+        uses: actions/setup-go@v4.0.1
+        with:
+          # Path to the go.mod or go.work file.
+          go-version-file: ${{env.SERVICE}}/go.mod
+          # Set this option to true if you want the action to always check for the latest available version that satisfies the version spec
+          check-latest: false
+          # Used to specify whether caching is needed. Set to true, if you'd like to enable caching.
+          cache: true
+          # Used to specify the path to a dependency file - go.sum
+          cache-dependency-path: ${{env.SERVICE}}/go.sum
+      - name: Build the Docker image
+        run: |
+          docker build . \
+            --file Dockerfile \
+            --tag ${{env.SERVICE}}:${{ github.sha }} \
+            --build-arg TARGETARCH=amd64
+        env:
+          DOCKER_BUILDKIT: 1
+
     # TODO: activate again
     # - name: Run Trivy container vulnerability scan
     #   uses: aquasecurity/trivy-action@master
