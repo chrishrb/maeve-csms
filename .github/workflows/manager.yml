@@ -42,7 +42,7 @@ jobs:
       with:
         version: v1.60
     - name: Run Gosec Security Scanner
-      uses: securego/gosec@
+      uses: securego/gosec@master
       with:
         args: ./...
     - name: Test & Coverage
