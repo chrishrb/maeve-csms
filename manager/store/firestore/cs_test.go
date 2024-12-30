@@ -368,7 +368,7 @@ func TestListChargeStationInstallCertificates(t *testing.T) {
 				CertificateId:                 "v2g001",
 				CertificateData:               "v2g-pem-data",
 				CertificateInstallationStatus: store.CertificateInstallationPending,
-				SendAfter:                     now.UTC(),
+				SendAfter:                     time.Date(2023, time.January, 1, 12, 0, 0, 0, time.UTC),
 			},
 		},
 	}
