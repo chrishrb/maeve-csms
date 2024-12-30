@@ -23,7 +23,7 @@ import (
 
 func TestLookupChargeStation(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = w.Write([]byte(`{"securityProfile":1,"base64SHA256Password":"DEADBEEF"}`))
+		_, _ = w.Write([]byte(`{"security_profile":1,"base64_SHA256_password":"DEADBEEF"}`))
 	}))
 	defer server.Close()
 
