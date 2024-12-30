@@ -72,7 +72,7 @@ func (h *otherHubjectHttpHandler) ServeHTTP(w http.ResponseWriter, r *http.Reque
 	}
 
 	responseString := certificateInstallationResponse(request.CertificateInstallationReq, dummyExiResponse)
-	w.Write([]byte(responseString))
+	_, _ = w.Write([]byte(responseString))
 }
 
 func certificateInstallationResponse(request, exiResponse string) string {

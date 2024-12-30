@@ -324,7 +324,8 @@ func TestPostStartSession(t *testing.T) {
 	b, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	var ocpiResponseCommandResponse ocpi.OcpiResponseCommandResponse
-	json.Unmarshal(b, &ocpiResponseCommandResponse)
+	err = json.Unmarshal(b, &ocpiResponseCommandResponse)
+	require.NoError(t, err)
 	assert.Equal(t, ocpi.StatusSuccess, ocpiResponseCommandResponse.StatusCode)
 	t.Logf("%s", string(b))
 	require.NotNilf(t, ocpiResponseCommandResponse.Data, "ocpiResponseCommandResponse.Data should not be nil")

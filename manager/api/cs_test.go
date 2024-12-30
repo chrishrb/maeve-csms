@@ -34,6 +34,7 @@ func TestRegisterChargeStation(t *testing.T) {
 		PostalCode:  testutil.StringPtr("9000"),
 		PartyId:     "TWK",
 	})
+	require.NoError(t, err)
 
 	// Create cs
 	req := httptest.NewRequest(http.MethodPost, "/cs", strings.NewReader(fmt.Sprintf(`{"security_profile":0, "location_id": "%s"}`, loc.Id)))
@@ -74,6 +75,8 @@ func TestLookupChargeStation(t *testing.T) {
 		PostalCode:  testutil.StringPtr("9000"),
 		PartyId:     "TWK",
 	})
+	require.NoError(t, err)
+
 	cs, err := engine.CreateChargeStation(context.Background(), &store.ChargeStation{
 		SecurityProfile: 1,
 		LocationId:      loc.Id,

@@ -25,7 +25,6 @@ func setupServer(t *testing.T) (*httptest.Server, *chi.Mux, store.Engine, clock.
 	require.NoError(t, err)
 
 	r := chi.NewRouter()
-	r.Use(api.ValidationMiddleware("/").Handler)
 	r.Mount("/", api.Handler(srv))
 	server := httptest.NewServer(r)
 

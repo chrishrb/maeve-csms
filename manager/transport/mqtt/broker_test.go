@@ -31,6 +31,12 @@ func TestNewBroker(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
+	router := paho.NewStandardRouter()
+	router.RegisterHandler("test/#", func(m *paho.Publish) {
+		t.Logf("received message: %v", m)
+		doneCh <- struct{}{}
+	})
+
 	_, err = autopaho.NewConnection(context.Background(), autopaho.ClientConfig{
 		BrokerUrls:        []*url.URL{addr},
 		KeepAlive:         10,
@@ -50,10 +56,7 @@ func TestNewBroker(t *testing.T) {
 		},
 		ClientConfig: paho.ClientConfig{
 			ClientID: "cs1",
-			Router: paho.NewSingleHandlerRouter(func(m *paho.Publish) {
-				t.Logf("received message: %v", m)
-				doneCh <- struct{}{}
-			}),
+			Router:   router,
 		},
 	})
 	if err != nil {

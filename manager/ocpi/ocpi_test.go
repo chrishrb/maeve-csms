@@ -139,12 +139,12 @@ func TestPushLocation(t *testing.T) {
 	mux.HandleFunc("/ocpi/versions", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf(`{"data":[{"version":"2.2","url":"%s/ocpi/2.2"}], "status_code":1000}`, receiverServer.URL)))
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"data":[{"version":"2.2","url":"%s/ocpi/2.2"}], "status_code":1000}`, receiverServer.URL)))
 	})
 	mux.HandleFunc("/ocpi/2.2", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodGet, r.Method)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(fmt.Sprintf(`{"data":{
+		_, _ = w.Write([]byte(fmt.Sprintf(`{"data":{
 				"version":"2.2",
 				"endpoints":[{"identifier":"locations","role":"RECEIVER","url":"%s/ocpi/receiver/2.2/locations"}]},
 				"status_code":1000}`,
@@ -154,7 +154,8 @@ func TestPushLocation(t *testing.T) {
 		assert.Equal(t, http.MethodPut, r.Method)
 		assert.Equal(t, r.Header.Get("X-Correlation-ID"), "some-correlation-id")
 		var got []byte
-		r.Body.Read(got)
+		_, err := r.Body.Read(got)
+		require.NoError(t, err)
 		assert.Equal(t, []byte(nil), got)
 		w.WriteHeader(http.StatusCreated)
 	})

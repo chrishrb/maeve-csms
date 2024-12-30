@@ -41,7 +41,8 @@ func TestEmitterSendsOcpp201Message(t *testing.T) {
 	// subscribe to the output channel
 	rcvdCh := make(chan struct{})
 
-	mqttClient := listenForMessageSentByManager(t, ctx, clientUrl, paho.NewSingleHandlerRouter(func(publish *paho.Publish) {
+	router := paho.NewStandardRouter()
+	router.RegisterHandler("cs/out/ocpp2.0.1/cs001", func(publish *paho.Publish) {
 		assert.Equal(t, "cs/out/ocpp2.0.1/cs001", publish.Topic)
 		var msg transport.Message
 		err := json.Unmarshal(publish.Payload, &msg)
@@ -51,7 +52,8 @@ func TestEmitterSendsOcpp201Message(t *testing.T) {
 		assert.Equal(t, "1234", msg.MessageId)
 		assert.JSONEq(t, `{"requestedMessage":"Heartbeat"}`, string(msg.RequestPayload))
 		rcvdCh <- struct{}{}
-	}))
+	})
+	mqttClient := listenForMessageSentByManager(t, ctx, clientUrl, router)
 
 	defer func() {
 		_ = mqttClient.Disconnect(ctx)
@@ -97,7 +99,8 @@ func TestEmitterSendsOcpp16Message(t *testing.T) {
 	// subscribe to the output channel
 	rcvdCh := make(chan struct{})
 
-	mqttClient := listenForMessageSentByManager(t, ctx, clientUrl, paho.NewSingleHandlerRouter(func(publish *paho.Publish) {
+	router := paho.NewStandardRouter()
+	router.RegisterHandler("cs/out/ocpp1.6/cs001", func(publish *paho.Publish) {
 		assert.Equal(t, "cs/out/ocpp1.6/cs001", publish.Topic)
 		var msg transport.Message
 		err := json.Unmarshal(publish.Payload, &msg)
@@ -107,7 +110,8 @@ func TestEmitterSendsOcpp16Message(t *testing.T) {
 		assert.Equal(t, "1234", msg.MessageId)
 		assert.JSONEq(t, `{"requestedMessage":"Heartbeat"}`, string(msg.RequestPayload))
 		rcvdCh <- struct{}{}
-	}))
+	})
+	mqttClient := listenForMessageSentByManager(t, ctx, clientUrl, router)
 
 	defer func() {
 		_ = mqttClient.Disconnect(ctx)
@@ -163,7 +167,8 @@ func TestEmitterAddsCorrelationData(t *testing.T) {
 	// subscribe to the output channel
 	rcvdCh := make(chan struct{})
 
-	mqttClient := listenForMessageSentByManager(t, ctx, clientUrl, paho.NewSingleHandlerRouter(func(publish *paho.Publish) {
+	router := paho.NewStandardRouter()
+	router.RegisterHandler("cs/out/ocpp2.0.1/cs001", func(publish *paho.Publish) {
 		assert.Equal(t, "cs/out/ocpp2.0.1/cs001", publish.Topic)
 		require.NotNil(t, publish.Properties)
 		require.NotNil(t, publish.Properties.CorrelationData)
@@ -173,7 +178,8 @@ func TestEmitterAddsCorrelationData(t *testing.T) {
 		assert.NotEmpty(t, correlationMap["traceparent"])
 
 		rcvdCh <- struct{}{}
-	}))
+	})
+	mqttClient := listenForMessageSentByManager(t, ctx, clientUrl, router)
 
 	defer func() {
 		_ = mqttClient.Disconnect(ctx)

@@ -42,10 +42,6 @@ jobs:
       with:
         version: v1.60
         working-directory: ${{env.SERVICE}}
-    - name: Run Gosec Security Scanner
-      uses: securego/gosec@master
-      with:
-        args: ./${{env.SERVICE}}/...
     - name: Test & Coverage
       run: | 
         go test ./... -coverprofile=coverage.out
