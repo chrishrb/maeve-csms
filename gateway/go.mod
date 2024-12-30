@@ -1,6 +1,6 @@
 module github.com/thoughtworks/maeve-csms/gateway
 
-go 1.20
+go 1.23
 
 require (
 	github.com/eclipse/paho.golang v0.11.0
