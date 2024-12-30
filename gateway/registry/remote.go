@@ -14,10 +14,10 @@ type RemoteRegistry struct {
 	ManagerApiAddr string
 }
 
-type ChargeStationAuthDetailsResponse struct {
-	SecurityProfile        int    `json:"securityProfile"`
-	Base64SHA256Password   string `json:"base64SHA256Password,omitempty"`
-	InvalidUsernameAllowed bool   `json:"invalidUsernameAllowed,omitempty"`
+type ChargeStationDetailsResponse struct {
+	SecurityProfile        int    `json:"security_profile"`
+	Base64SHA256Password   string `json:"base64_SHA256_password,omitempty"`
+	InvalidUsernameAllowed bool   `json:"invalid_username_allowed,omitempty"`
 }
 
 func (r RemoteRegistry) LookupChargeStation(clientId string) (*ChargeStation, error) {
@@ -41,16 +41,16 @@ func (r RemoteRegistry) LookupChargeStation(clientId string) (*ChargeStation, er
 		defer func() {
 			_ = resp.Body.Close()
 		}()
-		var chargeStationAuthDetails ChargeStationAuthDetailsResponse
-		err = json.Unmarshal(b, &chargeStationAuthDetails)
+		var chargeStationDetails ChargeStationDetailsResponse
+		err = json.Unmarshal(b, &chargeStationDetails)
 		if err != nil {
 			return nil, fmt.Errorf("unmarshaling data: %w", err)
 		}
 		return &ChargeStation{
 			ClientId:               clientId,
-			SecurityProfile:        SecurityProfile(chargeStationAuthDetails.SecurityProfile),
-			Base64SHA256Password:   chargeStationAuthDetails.Base64SHA256Password,
-			InvalidUsernameAllowed: chargeStationAuthDetails.InvalidUsernameAllowed,
+			SecurityProfile:        SecurityProfile(chargeStationDetails.SecurityProfile),
+			Base64SHA256Password:   chargeStationDetails.Base64SHA256Password,
+			InvalidUsernameAllowed: chargeStationDetails.InvalidUsernameAllowed,
 		}, nil
 	}
 
