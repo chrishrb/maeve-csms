@@ -113,7 +113,7 @@ services:
   swagger-ui:
     image: swaggerapi/swagger-ui
     environment:
-      SWAGGER_JSON_URL: http://localhost:9410/api/openapi.json
+      URLS: "[{ url: 'http://localhost:9410/api/openapi.json', name: 'API' }, { url: 'http://localhost:9411/openapi.json', name: 'OCPI' }]"
     ports:
       - "8081:8080"
     depends_on:

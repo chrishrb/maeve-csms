@@ -55,3 +55,7 @@ func (t Location) Render(w http.ResponseWriter, r *http.Request) error {
 func (t Transaction) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
+
+func (t ChargeStationRuntimeDetails) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}

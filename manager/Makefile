@@ -8,9 +8,9 @@ init: ## Init
 	go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@latest
 	go install github.com/securego/gosec/v2/cmd/gosec@latest
 
-.PHONY: build
-run: ## Build
-	${GOCMD} run . serve --config-file ../config/manager/config.toml
+.PHONY: run
+run: ## Run
+	docker-compose build manager && docker-compose up -d
 
 .PHONY: build
 build: ## Build

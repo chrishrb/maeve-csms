@@ -7,9 +7,9 @@ all: generate build format lint gosec integration ## Format, lint, build and tes
 init: ## Init
 	go install github.com/securego/gosec/v2/cmd/gosec@latest
 
-.PHONY: build
-run: ## Build
-	${GOCMD} run . serve --config-file ../config/manager/config.toml
+.PHONY: run
+run: ## Run
+	docker-compose build gateway && docker-compose up -d
 
 .PHONY: build
 build: ## Build
@@ -23,10 +23,6 @@ generate: ## Generate
 .PHONY: test
 test: ## Test
 	${GOCMD} test ./...
-
-.PHONY: integration
-integration: ## Run unit and integration tests
-	${GOCMD} test -tags=integration ./...
 
 .PHONY: gosec
 gosec: ## Run unit and integration tests

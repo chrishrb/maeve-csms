@@ -79,7 +79,7 @@ type ChargeStationSettingsStore interface {
 }
 
 type ChargeStationRuntimeDetails struct {
-	OcppVersion string
+	OcppVersion string `json:"ocpp_version"`
 }
 
 type ChargeStationRuntimeDetailsStore interface {

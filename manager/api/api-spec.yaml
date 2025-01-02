@@ -169,6 +169,39 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Status'
+  /cs/{cs_id}/runtime-details:
+    get:
+      summary: Get Charge Station runtime details
+      tags:
+        - charge_station
+      description: Retrieve runtime details of a specific charge station by its ID.
+      operationId: 'lookupChargeStationRuntimeDetails'
+      parameters:
+        - name: 'cs_id'
+          in: 'path'
+          description: 'The charge station identifier'
+          required: true
+          schema:
+            type: 'string'
+      responses:
+        '200':
+          description: Charge station runtime details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChargeStationRuntimeDetails'
+        '404':
+          description: 'Unknown charge station'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
   /cs/{cs_id}/reconfigure:
     post:
       summary: 'Reconfigure the charge station'
@@ -739,6 +772,15 @@ components:
         invalid_username_allowed:
           type: 'boolean'
           description: 'If set to true then an invalid username will not prevent the charge station connecting'
+    ChargeStationRuntimeDetails:
+      type: object
+      description: Represents charge station runtime details.
+      required:
+        - ocpp_version
+      properties:
+        ocpp_version:
+          type: string
+          description: OCPP version used with charge station.
     Evse:
       type: object
       properties:

@@ -349,3 +349,21 @@ func (s *Server) TriggerChargeStation(w http.ResponseWriter, r *http.Request, cs
 
 	w.WriteHeader(http.StatusCreated)
 }
+
+func (s *Server) LookupChargeStationRuntimeDetails(w http.ResponseWriter, r *http.Request, csId string) {
+	csDetails, err := s.store.LookupChargeStationRuntimeDetails(r.Context(), csId)
+	if err != nil {
+		_ = render.Render(w, r, ErrInternalError(err))
+		return
+	}
+	if csDetails == nil {
+		_ = render.Render(w, r, ErrNotFound)
+		return
+	}
+
+	resp := ChargeStationRuntimeDetails{
+		OcppVersion: csDetails.OcppVersion,
+	}
+
+	_ = render.Render(w, r, resp)
+}

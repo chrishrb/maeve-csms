@@ -45,6 +45,10 @@ type WebsocketHandler struct {
 	tracer                trace.Tracer
 }
 
+const (
+	pingPeriod = 60 * time.Second
+)
+
 type WebsocketOpt func(handler *WebsocketHandler)
 
 func WithMqttBrokerUrl(brokerUrl *url.URL) WebsocketOpt {
@@ -352,6 +356,9 @@ func (s *WebsocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// we've finished connecting... complete this span so we get to see the details in the trace
 	span.End()
 
+  // hearbeat to make sure charge station is still responsive, otherwise kill connection
+	go heartbeat(context.Background(), wsConn, pingPeriod)
+
 	// listen on the CSMS Tx channel and publish those messages on the inbound topic
 	goPublishToCSMS(ctx, s.tracer, p.CSMSTx, mqttConn, s.mqttTopicPrefix, protocol, clientId)
 
@@ -367,6 +374,38 @@ func getScheme(r *http.Request) string {
 		return "wss"
 	}
 	return "ws"
+}
+
+func heartbeat(ctx context.Context, wsConn *websocket.Conn, pingPeriod time.Duration) {
+	t := time.NewTimer(pingPeriod)
+	defer t.Stop()
+	failCount := 0
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+		}
+
+		span := trace.SpanFromContext(ctx)
+		err := wsConn.Ping(ctx)
+		if err != nil {
+			span.SetStatus(codes.Error, "ping failed")
+			failCount++
+			if failCount >= 5 {
+				span.End()
+				wsConn.Close(websocket.StatusGoingAway, "no pong received")
+				return
+			}
+		} else {
+			span.SetStatus(codes.Error, "ping successful")
+			failCount = 0
+		}
+		span.End()
+
+		t.Reset(time.Minute)
+	}
 }
 
 func checkAuthorization(ctx context.Context, r *http.Request, cs *registry.ChargeStation) bool {
@@ -533,6 +572,7 @@ func readFromChargeStation(ctx context.Context, tracer trace.Tracer, wsConn *web
 				continue
 			}
 			// connection closed
+			// TODO: tell api that connection is closed
 			break
 		} else if msg != nil {
 			csRx <- msg

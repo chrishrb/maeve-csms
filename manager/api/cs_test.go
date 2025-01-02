@@ -168,3 +168,41 @@ func TestLookupChargeStationThatDoesNotExist(t *testing.T) {
 
 	assert.Equal(t, http.StatusNotFound, rr.Result().StatusCode)
 }
+
+func TestLookupChargeStationRuntimeDetails(t *testing.T) {
+	server, r, engine, _ := setupServer(t)
+	defer server.Close()
+
+	err := engine.SetChargeStationRuntimeDetails(context.Background(), "cs001", &store.ChargeStationRuntimeDetails{
+		OcppVersion: "2.0.1",
+	})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodGet, "/cs/cs001/runtime-details", strings.NewReader("{}"))
+	req.Header.Set("content-type", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	var res store.ChargeStationRuntimeDetails
+	err = json.NewDecoder(rr.Body).Decode(&res)
+	require.NoError(t, err)
+
+	want := &store.ChargeStationRuntimeDetails{
+		OcppVersion: res.OcppVersion,
+	}
+
+	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
+	assert.Equal(t, *want, res)
+}
+
+func TestLookupChargeStationRuntimeDetailsThatDoesNotExist(t *testing.T) {
+	server, r, _, _ := setupServer(t)
+	defer server.Close()
+
+	req := httptest.NewRequest(http.MethodGet, "/cs/cs001/runtime-details", strings.NewReader("{}"))
+	req.Header.Set("accept", "application/json")
+	rr := httptest.NewRecorder()
+	r.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusNotFound, rr.Result().StatusCode)
+}
