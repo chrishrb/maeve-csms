@@ -328,9 +328,9 @@ func (s *Store) ListTransactionsByChargeStation(_ context.Context, csId string, 
 	transactions := make([]*store.Transaction, 0, len(s.transactions))
 
 	for _, transaction := range s.transactions {
-    if transaction.ChargeStationId == csId {
-		  transactions = append(transactions, transaction)
-    }
+		if transaction.ChargeStationId == csId {
+			transactions = append(transactions, transaction)
+		}
 	}
 
 	return transactions, nil
