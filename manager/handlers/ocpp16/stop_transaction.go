@@ -46,7 +46,7 @@ func (s StopTransactionHandler) HandleCall(ctx context.Context, chargeStationId 
 		}
 	}
 
-	transaction, err := s.TransactionStore.FindTransaction(ctx, chargeStationId, transactionId)
+	transaction, err := s.TransactionStore.LookupTransaction(ctx, chargeStationId, transactionId)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func calculateTransactionEndOutletEnergy(clock clock.PassiveClock, transactionVa
 					Context:   &transactionEndContext,
 					Location:  &outletLocation,
 					Measurand: &energyRegisteredMeasurand,
-					Value:     float64(energyUsed),
+					Value:     float32(energyUsed),
 				},
 			},
 			Timestamp: clock.Now().Format(time.RFC3339),
@@ -182,7 +182,7 @@ func convertSampleValue(sampleValue types.StopTransactionJsonTransactionDataElem
 		Measurand:     (*string)(sampleValue.Measurand),
 		Phase:         (*string)(sampleValue.Phase),
 		UnitOfMeasure: convertUnitOfMeasure(sampleValue.Unit),
-		Value:         value,
+		Value:         float32(value),
 	}, nil
 }
 

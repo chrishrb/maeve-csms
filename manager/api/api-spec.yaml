@@ -619,7 +619,89 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Status'
-
+  /transactions/{cs_id}:
+    get:
+      summary: List transactions by charge station
+      description: Retrieve a list of all transactions by charge station.
+      tags:
+        - transaction
+      operationId: 'listTransactionsByChargeStation'
+      parameters:
+        - name: cs_id
+          in: path
+          required: true
+          description: 'The charge station identifier'
+          schema:
+            type: string
+        - required: false
+          in: 'query'
+          name: 'offset'
+          schema:
+            type: 'integer'
+            minimum: 0
+          description: The number of items to skip before starting to collect the result set.
+        - required: false
+          in: 'query'
+          name: 'limit'
+          schema:
+            type: 'integer'
+            minimum: 1
+            maximum: 100
+          description: The numbers of items to return.
+      responses:
+        '200':
+          description: A list of transactions.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+  /transactions/{cs_id}/{transaction_id}:
+    get:
+      summary: Find a transaction
+      description: Retrieve a specific transaction by charge station ID and transaction ID.
+      tags:
+        - transaction
+      operationId: 'lookupTransaction'
+      parameters:
+        - name: cs_id
+          in: path
+          required: true
+          description: 'The charge station identifier'
+          schema:
+            type: string
+        - name: transaction_id
+          in: path
+          required: true
+          description: 'The transaction identifier'
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A transaction object.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        default:
+          description: 'Unexpected error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
 components:
   schemas:
     ChargeStation:
@@ -995,3 +1077,79 @@ components:
         longitude:
           type: string
           format: float
+    Transaction:
+      type: object
+      required:
+        - charge_station_id
+        - transaction_id
+        - id_token
+        - token_type
+        - meter_values
+        - start_seq_no
+        - ended_seq_no
+        - updated_seq_no_count
+        - offline
+      properties:
+        charge_station_id:
+          type: string
+        transaction_id:
+          type: string
+        id_token:
+          type: string
+        token_type:
+          type: string
+        meter_values:
+          type: array
+          items:
+            $ref: '#/components/schemas/MeterValue'
+        start_seq_no:
+          type: integer
+        ended_seq_no:
+          type: integer
+        updated_seq_no_count:
+          type: integer
+        offline:
+          type: boolean
+    MeterValue:
+      type: object
+      required:
+        - sampled_values
+        - timestamp
+      properties:
+        sampled_values:
+          type: array
+          items:
+            $ref: '#/components/schemas/SampledValue'
+        timestamp:
+          type: string
+    SampledValue:
+      type: object
+      required:
+        - value
+      properties:
+        context:
+          type: string
+          nullable: true
+        location:
+          type: string
+          nullable: true
+        measurand:
+          type: string
+          nullable: true
+        phase:
+          type: string
+          nullable: true
+        unit_of_measure:
+          $ref: '#/components/schemas/UnitOfMeasure'
+        value:
+          type: number
+    UnitOfMeasure:
+      type: object
+      required:
+        - unit
+        - multipler
+      properties:
+        unit:
+          type: string
+        multipler:
+          type: integer

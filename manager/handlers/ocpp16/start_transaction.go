@@ -53,7 +53,7 @@ func (t StartTransactionHandler) HandleCall(ctx context.Context, chargeStationId
 							Unit:      string(types.MeterValuesJsonMeterValueElemSampledValueElemUnitWh),
 							Multipler: 1,
 						},
-						Value: float64(req.MeterStart),
+						Value: float32(req.MeterStart),
 					},
 				},
 			},

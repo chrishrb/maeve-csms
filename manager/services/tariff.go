@@ -56,7 +56,7 @@ func findMostRecentOutletEnergyReading(transaction *store.Transaction) (float64,
 			if sv.Context != nil && *sv.Context == "Transaction.End" &&
 				sv.Measurand != nil && *sv.Measurand == "Energy.Active.Import.Register" &&
 				sv.Location != nil && *sv.Location == "Outlet" {
-				totalWh = sv.Value
+				totalWh = float64(sv.Value)
 				found = true
 			}
 		}

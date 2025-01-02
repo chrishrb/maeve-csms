@@ -321,20 +321,22 @@ func (s *Store) updateTransaction(transaction *store.Transaction) {
 	s.transactions[key] = transaction
 }
 
-func (s *Store) ListTransactions(_ context.Context) ([]*store.Transaction, error) {
+func (s *Store) ListTransactionsByChargeStation(_ context.Context, csId string, offset, limit int) ([]*store.Transaction, error) {
 	s.Lock()
 	defer s.Unlock()
 
 	transactions := make([]*store.Transaction, 0, len(s.transactions))
 
 	for _, transaction := range s.transactions {
-		transactions = append(transactions, transaction)
+    if transaction.ChargeStationId == csId {
+		  transactions = append(transactions, transaction)
+    }
 	}
 
 	return transactions, nil
 }
 
-func (s *Store) FindTransaction(_ context.Context, chargeStationId, transactionId string) (*store.Transaction, error) {
+func (s *Store) LookupTransaction(_ context.Context, chargeStationId, transactionId string) (*store.Transaction, error) {
 	s.Lock()
 	defer s.Unlock()
 	return s.getTransaction(chargeStationId, transactionId), nil

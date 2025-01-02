@@ -6,13 +6,14 @@ import (
 	"context"
 	"fmt"
 
+	"cloud.google.com/go/firestore"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 func (s *Store) CreateTransaction(ctx context.Context, chargeStationId, transactionId, idToken, tokenType string, meterValue []store.MeterValue, seqNo int, offline bool) error {
-	transaction, err := s.FindTransaction(ctx, chargeStationId, transactionId)
+	transaction, err := s.LookupTransaction(ctx, chargeStationId, transactionId)
 	if err != nil {
 		return fmt.Errorf("getting transaction: %w", err)
 	}
@@ -40,7 +41,7 @@ func (s *Store) CreateTransaction(ctx context.Context, chargeStationId, transact
 	return s.updateTransaction(ctx, chargeStationId, transactionId, transaction)
 }
 
-func (s *Store) FindTransaction(ctx context.Context, chargeStationId, transactionId string) (*store.Transaction, error) {
+func (s *Store) LookupTransaction(ctx context.Context, chargeStationId, transactionId string) (*store.Transaction, error) {
 	transactionRef := s.client.Doc(getPath(chargeStationId, transactionId))
 	snap, err := transactionRef.Get(ctx)
 	if err != nil {
@@ -58,8 +59,8 @@ func (s *Store) FindTransaction(ctx context.Context, chargeStationId, transactio
 	return &transaction, nil
 }
 
-func (s *Store) ListTransactions(ctx context.Context) ([]*store.Transaction, error) {
-	transactionRefs, err := s.client.Collection("Transaction").Documents(ctx).GetAll()
+func (s *Store) ListTransactionsByChargeStation(ctx context.Context, csId string, offset, limit int) ([]*store.Transaction, error) {
+	transactionRefs, err := s.client.Collection(fmt.Sprintf("ChargeStation/%s/Transaction", csId)).OrderBy("Id", firestore.Asc).Offset(offset).Limit(limit).Documents(ctx).GetAll()
 	if err != nil {
 		return nil, fmt.Errorf("getting transactions: %w", err)
 	}
@@ -77,7 +78,7 @@ func (s *Store) ListTransactions(ctx context.Context) ([]*store.Transaction, err
 }
 
 func (s *Store) UpdateTransaction(ctx context.Context, chargeStationId, transactionId string, meterValue []store.MeterValue) error {
-	transaction, err := s.FindTransaction(ctx, chargeStationId, transactionId)
+	transaction, err := s.LookupTransaction(ctx, chargeStationId, transactionId)
 	if err != nil {
 		return fmt.Errorf("getting transaction: %w", err)
 	}
@@ -98,7 +99,7 @@ func (s *Store) UpdateTransaction(ctx context.Context, chargeStationId, transact
 }
 
 func (s *Store) EndTransaction(ctx context.Context, chargeStationId, transactionId, idToken, tokenType string, meterValue []store.MeterValue, seqNo int) error {
-	transaction, err := s.FindTransaction(ctx, chargeStationId, transactionId)
+	transaction, err := s.LookupTransaction(ctx, chargeStationId, transactionId)
 	if err != nil {
 		return fmt.Errorf("getting transaction: %w", err)
 	}
@@ -130,5 +131,5 @@ func (s *Store) updateTransaction(ctx context.Context, chargeStationId, transact
 }
 
 func getPath(chargeStationId, transactionId string) string {
-	return fmt.Sprintf("Transaction/%s-%s", chargeStationId, transactionId)
+	return fmt.Sprintf("ChargeStation/%s/Transaction/%s", chargeStationId, transactionId)
 }

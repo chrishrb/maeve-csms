@@ -103,7 +103,7 @@ func TestStopTransactionHandler(t *testing.T) {
 
 	assert.Equal(t, want, got)
 
-	found, err := transactionStore.FindTransaction(context.TODO(), chargingStationId, handlers.ConvertToUUID(42))
+	found, err := transactionStore.LookupTransaction(context.TODO(), chargingStationId, handlers.ConvertToUUID(42))
 	require.NoError(t, err)
 
 	expectedTransactionEndContext := "Transaction.End"

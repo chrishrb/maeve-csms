@@ -5,39 +5,39 @@ package store
 import "context"
 
 type Transaction struct {
-	ChargeStationId   string       `firestore:"chargeStationId"`
-	TransactionId     string       `firestore:"transactionId"`
-	IdToken           string       `firestore:"idToken"`
-	TokenType         string       `firestore:"tokenType"`
-	MeterValues       []MeterValue `firestore:"meterValues"`
-	StartSeqNo        int          `firestore:"startSeqNo"`
-	EndedSeqNo        int          `firestore:"endedSeqNo"`
-	UpdatedSeqNoCount int          `firestore:"updatedSeqNoCount"`
-	Offline           bool         `firestore:"offline"`
+	ChargeStationId   string       `json:"charge_station_id"`
+	TransactionId     string       `json:"transaction_id"`
+	IdToken           string       `json:"id_token"`
+	TokenType         string       `json:"token_type"`
+	MeterValues       []MeterValue `json:"meter_values"`
+	StartSeqNo        int          `json:"start_seq_no"`
+	EndedSeqNo        int          `json:"ended_seq_no"`
+	UpdatedSeqNoCount int          `json:"updated_seq_no_count"`
+	Offline           bool         `json:"offline"`
 }
 
 type MeterValue struct {
-	SampledValues []SampledValue `firestore:"sampledValue"`
-	Timestamp     string         `firestore:"timestamp"`
+	SampledValues []SampledValue `json:"sampled_values"`
+	Timestamp     string         `json:"timestamp"`
 }
 
 type SampledValue struct {
-	Context       *string        `firestore:"context"`
-	Location      *string        `firestore:"location"`
-	Measurand     *string        `firestore:"measurand"`
-	Phase         *string        `firestore:"phase"`
-	UnitOfMeasure *UnitOfMeasure `firestore:"unitOfMeasure"`
-	Value         float64        `firestore:"value"`
+	Context       *string        `json:"context"`
+	Location      *string        `json:"location"`
+	Measurand     *string        `json:"measurand"`
+	Phase         *string        `json:"phase"`
+	UnitOfMeasure *UnitOfMeasure `json:"unit_of_measure"`
+	Value         float32        `json:"value"`
 }
 
 type UnitOfMeasure struct {
-	Unit      string `firestore:"unit"`
-	Multipler int    `firestore:"multipler"`
+	Unit      string `json:"unit"`
+	Multipler int    `json:"multipler"`
 }
 
 type TransactionStore interface {
-	ListTransactions(ctx context.Context) ([]*Transaction, error)
-	FindTransaction(ctx context.Context, chargeStationId, transactionId string) (*Transaction, error)
+	ListTransactionsByChargeStation(ctx context.Context, chargeStationId string, offset int, limit int) ([]*Transaction, error)
+	LookupTransaction(ctx context.Context, chargeStationId, transactionId string) (*Transaction, error)
 	CreateTransaction(ctx context.Context, chargeStationId, transactionId, idToken, tokenType string, meterValue []MeterValue, seqNo int, offline bool) error
 	UpdateTransaction(ctx context.Context, chargeStationId, transactionId string, meterValue []MeterValue) error
 	EndTransaction(ctx context.Context, chargeStationId, transactionId, idToken, tokenType string, meterValue []MeterValue, seqNo int) error

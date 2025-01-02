@@ -69,7 +69,7 @@ func TestStartTransaction(t *testing.T) {
 
 	require.NoError(t, err)
 	transactionId := handlers.ConvertToUUID(got.TransactionId)
-	found, err := transactionStore.FindTransaction(ctx, "cs001", transactionId)
+	found, err := transactionStore.LookupTransaction(ctx, "cs001", transactionId)
 	require.NoError(t, err)
 
 	expectedContext := "Transaction.Begin"

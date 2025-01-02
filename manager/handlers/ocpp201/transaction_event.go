@@ -70,7 +70,7 @@ func (t TransactionEventHandler) HandleCall(ctx context.Context, chargeStationId
 	}
 
 	if req.EventType == types.TransactionEventEnumTypeEnded {
-		transaction, err := t.Store.FindTransaction(ctx, chargeStationId, req.TransactionInfo.TransactionId)
+		transaction, err := t.Store.LookupTransaction(ctx, chargeStationId, req.TransactionInfo.TransactionId)
 		if err != nil {
 			return nil, err
 		}
@@ -116,7 +116,7 @@ func convertSampledValue(sampledValue types.SampledValueType) store.SampledValue
 		Measurand:     (*string)(sampledValue.Measurand),
 		Phase:         (*string)(sampledValue.Phase),
 		UnitOfMeasure: convertUnitOfMeasure(sampledValue.UnitOfMeasure),
-		Value:         sampledValue.Value,
+		Value:         float32(sampledValue.Value),
 	}
 }
 

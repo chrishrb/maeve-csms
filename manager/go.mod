@@ -18,7 +18,6 @@ require (
 	github.com/oapi-codegen/runtime v1.1.1
 	github.com/pelletier/go-toml/v2 v2.2.3
 	github.com/prometheus/client_golang v1.20.5
-	github.com/rodaine/table v1.3.0
 	github.com/rs/cors v1.11.1
 	github.com/santhosh-tekuri/jsonschema v1.2.4
 	github.com/spf13/cobra v1.8.1

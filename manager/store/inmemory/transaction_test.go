@@ -23,7 +23,7 @@ func makePtr[T any](t T) *T {
 const idToken = "SOMERFID"
 const tokenType = "ISO14443"
 
-func NewMeterValues(energyReactiveExportValue float64) []store.MeterValue {
+func NewMeterValues(energyReactiveExportValue float32) []store.MeterValue {
 	return []store.MeterValue{
 		{
 			Timestamp: time.Now().Format(time.RFC3339),
@@ -42,7 +42,7 @@ func TestFindTransactionDoesNotExist(t *testing.T) {
 
 	transactionStore := inmemory.NewStore(clock.RealClock{})
 
-	got, err := transactionStore.FindTransaction(ctx, "unknown", "ids")
+	got, err := transactionStore.LookupTransaction(ctx, "unknown", "ids")
 	assert.NoError(t, err)
 	assert.Nil(t, got)
 }
@@ -57,7 +57,7 @@ func TestCreateAndFindTransaction(t *testing.T) {
 	err := transactionStore.CreateTransaction(ctx, "cs001", "1234", idToken, tokenType, meterValues, 0, false)
 	assert.NoError(t, err)
 
-	got, err := transactionStore.FindTransaction(ctx, "cs001", "1234")
+	got, err := transactionStore.LookupTransaction(ctx, "cs001", "1234")
 	assert.NoError(t, err)
 
 	want := &store.Transaction{
@@ -87,7 +87,7 @@ func TestCreateTransactionWithExistingTransaction(t *testing.T) {
 	err = transactionStore.CreateTransaction(ctx, "cs002", "1234", idToken, tokenType, meterValues2, 0, false)
 	assert.NoError(t, err)
 
-	got, err := transactionStore.FindTransaction(ctx, "cs002", "1234")
+	got, err := transactionStore.LookupTransaction(ctx, "cs002", "1234")
 	assert.NoError(t, err)
 
 	want := &store.Transaction{
@@ -117,7 +117,7 @@ func TestTransactionStoreUpdateCreatedTransaction(t *testing.T) {
 	err = transactionStore.UpdateTransaction(ctx, "cs003", "1234", meterValues2)
 	assert.NoError(t, err)
 
-	got, err := transactionStore.FindTransaction(ctx, "cs003", "1234")
+	got, err := transactionStore.LookupTransaction(ctx, "cs003", "1234")
 	assert.NoError(t, err)
 
 	want := &store.Transaction{
@@ -149,7 +149,7 @@ func TestTransactionStoreEndTransaction(t *testing.T) {
 	err = transactionStore.EndTransaction(ctx, "cs004", "1234", idToken, tokenType, meterValues3, 2)
 	assert.NoError(t, err)
 
-	got, err := transactionStore.FindTransaction(ctx, "cs004", "1234")
+	got, err := transactionStore.LookupTransaction(ctx, "cs004", "1234")
 	assert.NoError(t, err)
 
 	want := &store.Transaction{
@@ -176,7 +176,7 @@ func TestTransactionStoreEndNonExistingTransaction(t *testing.T) {
 	err := transactionStore.EndTransaction(ctx, "cs005", "1234", idToken, tokenType, meterValues, 2)
 	assert.NoError(t, err)
 
-	got, err := transactionStore.FindTransaction(ctx, "cs005", "1234")
+	got, err := transactionStore.LookupTransaction(ctx, "cs005", "1234")
 	assert.NoError(t, err)
 
 	want := &store.Transaction{

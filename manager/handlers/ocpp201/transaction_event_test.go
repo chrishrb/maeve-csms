@@ -75,7 +75,7 @@ func TestTransactionEventHandlerWithStartedEvent(t *testing.T) {
 	}
 	assert.Equal(t, want, got)
 
-	transaction, err := engine.FindTransaction(ctx, "cs001", "5555")
+	transaction, err := engine.LookupTransaction(ctx, "cs001", "5555")
 	require.NoError(t, err)
 	assert.NotNil(t, transaction)
 }
@@ -133,7 +133,7 @@ func TestTransactionEventHandlerWithStartedEventWithInvalidToken(t *testing.T) {
 	}
 	assert.Equal(t, want, got)
 
-	transaction, err := engine.FindTransaction(ctx, "cs001", "5555")
+	transaction, err := engine.LookupTransaction(ctx, "cs001", "5555")
 	require.NoError(t, err)
 	assert.NotNil(t, transaction)
 }
@@ -183,7 +183,7 @@ func TestTransactionEventHandlerWithUpdatedEvent(t *testing.T) {
 	want := &types.TransactionEventResponseJson{}
 	assert.Equal(t, want, got)
 
-	transaction, err := engine.FindTransaction(ctx, "cs001", "5555")
+	transaction, err := engine.LookupTransaction(ctx, "cs001", "5555")
 	require.NoError(t, err)
 	assert.NotNil(t, transaction)
 }
@@ -236,7 +236,7 @@ func TestTransactionEventHandlerWithEndedEvent(t *testing.T) {
 	}
 	assert.Equal(t, want, got)
 
-	transaction, err := engine.FindTransaction(ctx, "cs001", "5555")
+	transaction, err := engine.LookupTransaction(ctx, "cs001", "5555")
 	require.NoError(t, err)
 	assert.NotNil(t, transaction)
 }
