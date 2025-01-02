@@ -356,7 +356,7 @@ func (s *WebsocketHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// we've finished connecting... complete this span so we get to see the details in the trace
 	span.End()
 
-  // hearbeat to make sure charge station is still responsive, otherwise kill connection
+	// hearbeat to make sure charge station is still responsive, otherwise kill connection
 	go heartbeat(context.Background(), wsConn, pingPeriod)
 
 	// listen on the CSMS Tx channel and publish those messages on the inbound topic
