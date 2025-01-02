@@ -60,7 +60,7 @@ func (s *Store) LookupTransaction(ctx context.Context, chargeStationId, transact
 }
 
 func (s *Store) ListTransactionsByChargeStation(ctx context.Context, csId string, offset, limit int) ([]*store.Transaction, error) {
-	transactionRefs, err := s.client.Collection(fmt.Sprintf("ChargeStation/%s/Transaction", csId)).OrderBy("Id", firestore.Asc).Offset(offset).Limit(limit).Documents(ctx).GetAll()
+	transactionRefs, err := s.client.Collection(fmt.Sprintf("ChargeStation/%s/Transaction", csId)).OrderBy("TransactionId", firestore.Asc).Offset(offset).Limit(limit).Documents(ctx).GetAll()
 	if err != nil {
 		return nil, fmt.Errorf("getting transactions: %w", err)
 	}

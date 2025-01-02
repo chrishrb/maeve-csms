@@ -128,27 +128,27 @@ func TestTransactionStoreGetAllTransactionsByChargeStation(t *testing.T) {
 
 	transactionsBefore, err := transactionStore.ListTransactionsByChargeStation(ctx, "cs006", 0, 20)
 	assert.NoError(t, err)
+	assert.Equal(t, 0, len(transactionsBefore))
 
 	meterValues := NewMeterValues(100)
 	err = transactionStore.CreateTransaction(ctx, "cs006", "1234", idToken, tokenType, meterValues, 0, false)
 	assert.NoError(t, err)
 
-	err = transactionStore.CreateTransaction(ctx, "cs006", "1235", idToken, tokenType, meterValues, 0, false)
+	err = transactionStore.CreateTransaction(ctx, "cs006", "4567", idToken, tokenType, meterValues, 0, false)
 	assert.NoError(t, err)
 
-	err = transactionStore.CreateTransaction(ctx, "cs006", "1236", idToken, tokenType, meterValues, 0, false)
+	err = transactionStore.CreateTransaction(ctx, "cs006", "8912", idToken, tokenType, meterValues, 0, false)
 	assert.NoError(t, err)
 
-	err = transactionStore.CreateTransaction(ctx, "cs002", "1236", idToken, tokenType, meterValues, 0, false)
+	err = transactionStore.CreateTransaction(ctx, "cs002", "4444", idToken, tokenType, meterValues, 0, false)
 	assert.NoError(t, err)
 
-	err = transactionStore.CreateTransaction(ctx, "cs009", "1236", idToken, tokenType, meterValues, 0, false)
+	err = transactionStore.CreateTransaction(ctx, "cs009", "5555", idToken, tokenType, meterValues, 0, false)
 	assert.NoError(t, err)
 
 	transactionsAfter, err := transactionStore.ListTransactionsByChargeStation(ctx, "cs006", 0, 20)
 	assert.NoError(t, err)
-	got := len(transactionsAfter) - len(transactionsBefore)
-	assert.Equal(t, got, 3)
+	assert.Equal(t, 3, len(transactionsAfter))
 }
 
 func TestTransactionStoreUpdateCreatedTransaction(t *testing.T) {
