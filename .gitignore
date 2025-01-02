@@ -136,11 +136,19 @@ k6
 config/certificates/*.pem
 config/certificates/*.key
 config/certificates/*.csr
+
+# E2E
+e2e_tests/everest/config/everest/ocpp/**/config.json
 e2e_tests/everest/config/everest/certs/**/*.pem
 e2e_tests/everest/config/everest/certs/**/*.key
 e2e_tests/everest/config/everest/certs/**/*.csr
+e2e_tests/everest/config/everest/certs/**/*.jks
+e2e_tests/everest/config/everest/certs/**/*.txt
 e2e_tests/everest/config/certificates/**/*.pem
 e2e_tests/everest/config/certificates/**/*.key
 e2e_tests/everest/config/certificates/**/*.csr
+e2e_tests/everest/config/certificates/**/*.p7
+e2e_tests/everest/config/certificates/**/*.p12
+e2e_tests/everest/config/certificates/**/*.jks
 
 # End of https://www.toptal.com/developers/gitignore/api/goland+all,visualstudiocode,go
