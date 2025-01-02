@@ -27,5 +27,7 @@ CS_ID=$(curl -X 'POST' \
   | jq -r '.id')
 
 sed "s/<CS_ID>/${CS_ID}/" "$SCRIPT_DIR/../config/everest/ocpp/OCPP/config.template.json" > "$SCRIPT_DIR/../config/everest/ocpp/OCPP/config.json"
+sed "s/<CS_ID>/${CS_ID}/" "$SCRIPT_DIR/../config/everest/ocpp/OCPP201/component_config/standardized/InternalCtrlr.template.json" > "$SCRIPT_DIR/../config/everest/ocpp/OCPP201/component_config/standardized/InternalCtrlr.json"
+sed "s/<CS_ID>/${CS_ID}/" "$SCRIPT_DIR/../config/everest/ocpp/OCPP201/component_config/standardized/SecurityCtrlr.template.json" > "$SCRIPT_DIR/../config/everest/ocpp/OCPP201/component_config/standardized/SecurityCtrlr.json"
 
 echo "cs with id ${CS_ID} created"

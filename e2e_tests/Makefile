@@ -1,6 +1,8 @@
+OCPP_VERSION ?= ocpp
+
 .PHONY: up
 up: register-cs setup-rfid setup-contract
-	OCPP_VERSION=ocpp docker-compose --profile everest up -d
+	docker-compose --profile everest up -d
 
 .PHONY: down
 down:

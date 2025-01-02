@@ -1,16 +1,41 @@
 #!/bin/bash
 
+show_help() {
+    echo "Usage: $(basename "$0") [OCPP_VERSION]"
+    echo
+    echo "Arguments:"
+    echo "  OCPP_VERSION   OCPP version to use (default: 1.6, options: 1.6, 2.0.1)"
+    echo
+    echo "Options:"
+    echo "  -h, --help     Show this help message and exit"
+}
+
+# Check for help argument
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
+    show_help
+    exit 0
+fi
+
 # Get the directory where the script is located
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 
 # Get the directory where the CSMS is located
-DEFAULT_CSMS_DIR="${SCRIPT_DIR}"/..
-CSMS_DIR="${1:-$DEFAULT_CSMS_DIR}"
+CSMS_DIR="${SCRIPT_DIR}"/..
 
 # Define paths relative to the script's location
 EVEREST_DIR="$CSMS_DIR/e2e_tests"
 TEST_DIR="$CSMS_DIR/e2e_tests/test_driver"
 
+# Validate and set OCPP version
+OCPP_VERSION="${1:-ocpp}"
+if [ "$OCPP_VERSION" == "1.6" ]; then
+    export OCPP_VERSION="ocpp"
+elif [ "$OCPP_VERSION" == "2.0.1" ]; then
+    export OCPP_VERSION="ocpp201"
+else
+    echo "$OCPP_VERSION not valid. Using default 1.6"
+    export OCPP_VERSION="ocpp"
+fi
 
 # Function to start Docker Compose
 start_docker_compose_for_maeve_csms() {
