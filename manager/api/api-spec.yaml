@@ -12,6 +12,8 @@ info:
 servers:
   - url: http://localhost:9410/api/v0
     description: The local development server
+  - url: http://manager:9410/api/v0
+    description: The docker development server
 paths:
   /cs:
     get:

@@ -41,7 +41,7 @@ func NewApiHandler(settings config.ApiSettings, engine store.Engine, ocpi ocpi.A
 
 	r := chi.NewRouter()
 
-	logger := middleware.RequestLogger(logFormatter{})
+	logger := middleware.RequestLogger(logFormatter{endpoint: "api"})
 	swagger, _ := api.GetSwagger()
 
 	r.Use(middleware.Recoverer, secureMiddleware.Handler, cors.Default().Handler)

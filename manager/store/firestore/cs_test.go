@@ -20,7 +20,7 @@ import (
 	"github.com/thoughtworks/maeve-csms/manager/testutil"
 )
 
-func TestSetAndLookupChargeStation(t *testing.T) {
+func TestCreateAndLookupChargeStation(t *testing.T) {
 	defer cleanupAllCollections(t, "myproject")
 
 	ctx := context.Background()
@@ -67,7 +67,7 @@ func TestSetAndLookupChargeStation(t *testing.T) {
 				LastUpdated: time.Now().Format(time.RFC3339),
 			},
 		},
-		SecurityProfile:      store.TLSWithClientSideCertificates,
+		SecurityProfile:      store.UnsecuredTransportWithBasicAuth,
 		Base64SHA256Password: "DEADBEEF",
 	}
 

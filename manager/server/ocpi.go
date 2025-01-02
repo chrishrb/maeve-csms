@@ -39,7 +39,7 @@ func NewOcpiHandler(engine store.Engine, clock clock.PassiveClock, ocpiApi ocpi.
 
 	r := chi.NewRouter()
 
-	logger := middleware.RequestLogger(logFormatter{})
+	logger := middleware.RequestLogger(logFormatter{endpoint: "ocpi"})
 
 	swagger, err := ocpi.GetSwagger()
 	if err != nil {

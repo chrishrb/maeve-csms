@@ -2,6 +2,10 @@
 up: register-cs setup-rfid setup-contract
 	OCPP_VERSION=ocpp docker-compose --profile everest up -d
 
+.PHONY: down
+down:
+	docker-compose down
+
 .PHONY: test
 test: # password 123456
 	websocat --client-pkcs12-der ./config/certificates/cs001.pem --client-pkcs12-passwd 123456 wss://localhost:443

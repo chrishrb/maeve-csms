@@ -107,7 +107,7 @@ func TestRFIDCharge(t *testing.T) {
 	wg.Add(1)
 	t.Logf("authorise charge...")
 	tok = client.Publish("everest_api/dummy_token_provider/cmd/provide", 0, false,
-		fmt.Sprintln("{\"id_token\":\"DEADBEEF\",\"authorization_type\":\"RFID\",\"prevalidated\":false,\"connectors\":[1]}"))
+      fmt.Sprintln(`{"id_token":{"type": "ISO14443","value": "DEADBEEF"},"authorization_type":"RFID","prevalidated":false,"connectors":[1]}`))
 	if tok.WaitTimeout(1 * time.Second); tok.Error() != nil {
 		t.Fatalf("failed to publish authorise to topic: %v", tok.Error())
 	}

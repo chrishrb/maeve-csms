@@ -71,12 +71,16 @@ active_modules:
           implementation_id: charger
   yeti_driver_1:
     module: JsYetiSimulator
+    config_module:
+      connector_id: 1
   yeti_driver_2:
     module: JsYetiSimulator
+    config_module:
+      connector_id: 2
   slac:
-    module: JsSlacSimulator
+    module: SlacSimulator
   car_simulator_1:
-    module: JsCarSimulator
+    module: JsEvManager
     config_module:
       connector_id: 1
       auto_enable: true
@@ -93,7 +97,7 @@ active_modules:
         - module_id: slac
           implementation_id: ev
   car_simulator_2:
-    module: JsCarSimulator
+    module: JsEvManager
     config_module:
       connector_id: 2
       auto_enable: true
