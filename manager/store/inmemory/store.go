@@ -18,7 +18,6 @@ import (
 	"golang.org/x/exp/slices"
 	"k8s.io/utils/clock"
 
-	"github.com/google/uuid"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 )
 
@@ -60,21 +59,16 @@ func NewStore(clock clock.PassiveClock) *Store {
 
 func (s *Store) CloseConn() {}
 
-func (s *Store) CreateChargeStation(_ context.Context, cs *store.ChargeStation) (*store.ChargeStation, error) {
-	s.Lock()
-	defer s.Unlock()
-	id := uuid.NewString()
-	cs.Id = id
-	s.chargeStation[id] = cs
-	return cs, nil
+func (s *Store) CreateChargeStation(ctx context.Context, cs *store.ChargeStation) error {
+	return s.UpdateChargeStation(ctx, cs.Id, cs)
 }
 
-func (s *Store) UpdateChargeStation(_ context.Context, csId string, cs *store.ChargeStation) (*store.ChargeStation, error) {
+func (s *Store) UpdateChargeStation(_ context.Context, csId string, cs *store.ChargeStation) error {
 	s.Lock()
 	defer s.Unlock()
 	cs.Id = csId
 	s.chargeStation[csId] = cs
-	return cs, nil
+	return nil
 }
 
 func (s *Store) LookupChargeStation(_ context.Context, chargeStationId string) (*store.ChargeStation, error) {
@@ -521,23 +515,17 @@ func (s *Store) ListPartyDetailsForRole(_ context.Context, role string) ([]*stor
 	return parties, nil
 }
 
-func (s *Store) CreateLocation(_ context.Context, location *store.Location) (*store.Location, error) {
-	s.Lock()
-	defer s.Unlock()
-
-	location.Id = uuid.NewString()
-	s.locations[location.Id] = location
-
-	return location, nil
+func (s *Store) CreateLocation(ctx context.Context, location *store.Location) error {
+	return s.UpdateLocation(ctx, location.Id, location)
 }
 
-func (s *Store) UpdateLocation(_ context.Context, locationId string, location *store.Location) (*store.Location, error) {
+func (s *Store) UpdateLocation(_ context.Context, locationId string, location *store.Location) error {
 	s.Lock()
 	defer s.Unlock()
 
 	s.locations[locationId] = location
 
-	return location, nil
+	return nil
 }
 
 func (s *Store) LookupLocation(_ context.Context, locationId string) (*store.Location, error) {

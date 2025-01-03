@@ -20,7 +20,8 @@ func TestRegisterChargeStation(t *testing.T) {
 	defer server.Close()
 
 	// Create location
-	loc, err := engine.CreateLocation(context.Background(), &store.Location{
+	err := engine.CreateLocation(context.Background(), &store.Location{
+		Id:      "loc001",
 		Address: "F.Rooseveltlaan 3A",
 		City:    "Gent",
 		Coordinates: store.GeoLocation{
@@ -37,7 +38,7 @@ func TestRegisterChargeStation(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create cs
-	req := httptest.NewRequest(http.MethodPost, "/cs", strings.NewReader(fmt.Sprintf(`{"security_profile": 0, "location_id": "%s"}`, loc.Id)))
+	req := httptest.NewRequest(http.MethodPost, "/cs", strings.NewReader(fmt.Sprintf(`{"security_profile": 0, "location_id": "%s"}`, "loc001")))
 	req.Header.Set("content-type", "application/json")
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
@@ -49,7 +50,7 @@ func TestRegisterChargeStation(t *testing.T) {
 	want := &store.ChargeStation{
 		Id:              res.Id,
 		SecurityProfile: 0,
-		LocationId:      loc.Id,
+		LocationId:      "loc001",
 	}
 
 	assert.Equal(t, http.StatusCreated, rr.Result().StatusCode)
@@ -61,7 +62,8 @@ func TestLookupChargeStation(t *testing.T) {
 	defer server.Close()
 
 	// Given
-	loc, err := engine.CreateLocation(context.Background(), &store.Location{
+	err := engine.CreateLocation(context.Background(), &store.Location{
+		Id:      "loc001",
 		Address: "F.Rooseveltlaan 3A",
 		City:    "Gent",
 		Coordinates: store.GeoLocation{
@@ -77,14 +79,14 @@ func TestLookupChargeStation(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	cs, err := engine.CreateChargeStation(context.Background(), &store.ChargeStation{
+	err = engine.CreateChargeStation(context.Background(), &store.ChargeStation{
+		Id:              "cs001",
 		SecurityProfile: 1,
-		LocationId:      loc.Id,
+		LocationId:      "loc001",
 	})
 	require.NoError(t, err)
-	assert.NotEmpty(t, cs.Id)
 
-	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/cs/%s", cs.Id), strings.NewReader("{}"))
+	req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/cs/%s", "cs001"), strings.NewReader("{}"))
 	req.Header.Set("content-type", "application/json")
 	rr := httptest.NewRecorder()
 	r.ServeHTTP(rr, req)
@@ -96,7 +98,7 @@ func TestLookupChargeStation(t *testing.T) {
 	want := &store.ChargeStation{
 		Id:              res.Id,
 		SecurityProfile: 1,
-		LocationId:      loc.Id,
+		LocationId:      "loc001",
 		Evses:           &[]store.Evse{},
 	}
 
@@ -109,7 +111,8 @@ func TestListChargeStations(t *testing.T) {
 	defer server.Close()
 
 	// Create location
-	loc, err := engine.CreateLocation(context.Background(), &store.Location{
+	err := engine.CreateLocation(context.Background(), &store.Location{
+		Id:      "loc001",
 		Address: "F.Rooseveltlaan 3A",
 		City:    "Gent",
 		Coordinates: store.GeoLocation{
@@ -126,18 +129,22 @@ func TestListChargeStations(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create charge stations
-	cs1, err := engine.CreateChargeStation(context.Background(), &store.ChargeStation{
+	cs1 := &store.ChargeStation{
+		Id:              "cs1",
 		SecurityProfile: 1,
-		LocationId:      loc.Id,
+		LocationId:      "loc001",
 		Evses:           &[]store.Evse{},
-	})
+	}
+	err = engine.CreateChargeStation(context.Background(), cs1)
 	require.NoError(t, err)
 
-	cs2, err := engine.CreateChargeStation(context.Background(), &store.ChargeStation{
+	cs2 := &store.ChargeStation{
+		Id:              "cs2",
 		SecurityProfile: 2,
-		LocationId:      loc.Id,
+		LocationId:      "loc001",
 		Evses:           &[]store.Evse{},
-	})
+	}
+	err = engine.CreateChargeStation(context.Background(), cs2)
 	require.NoError(t, err)
 
 	// List charge stations

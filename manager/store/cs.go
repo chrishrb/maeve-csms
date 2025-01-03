@@ -43,8 +43,8 @@ type ChargeStation struct {
 }
 
 type ChargeStationStore interface {
-	CreateChargeStation(ctx context.Context, cs *ChargeStation) (*ChargeStation, error)
-	UpdateChargeStation(ctx context.Context, csId string, cs *ChargeStation) (*ChargeStation, error)
+	CreateChargeStation(ctx context.Context, cs *ChargeStation) error
+	UpdateChargeStation(ctx context.Context, csId string, cs *ChargeStation) error
 	DeleteChargeStation(ctx context.Context, csId string) error
 	LookupChargeStation(ctx context.Context, csId string) (*ChargeStation, error)
 	ListChargeStations(context context.Context, offset int, limit int) ([]*ChargeStation, error)
@@ -78,8 +78,15 @@ type ChargeStationSettingsStore interface {
 	DeleteChargeStationSettings(ctx context.Context, csId string) error
 }
 
+type OcppVersion string
+
+const (
+	OcppVersion16  OcppVersion = "1.6"
+	OcppVersion201 OcppVersion = "2.0.1"
+)
+
 type ChargeStationRuntimeDetails struct {
-	OcppVersion string `json:"ocpp_version"`
+	OcppVersion OcppVersion `json:"ocpp_version"`
 }
 
 type ChargeStationRuntimeDetailsStore interface {

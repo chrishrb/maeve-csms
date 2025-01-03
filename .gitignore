@@ -138,9 +138,6 @@ config/certificates/*.key
 config/certificates/*.csr
 
 # E2E
-e2e_tests/everest/config/everest/ocpp/OCPP/config.json
-e2e_tests/everest/config/everest/ocpp/OCPP201/component_config/standardized/InternalCtrlr.json
-e2e_tests/everest/config/everest/ocpp/OCPP201/component_config/standardized/SecurityCtrlr.json
 e2e_tests/everest/config/everest/certs/**/*.pem
 e2e_tests/everest/config/everest/certs/**/*.key
 e2e_tests/everest/config/everest/certs/**/*.csr

@@ -29,7 +29,7 @@
               {
                   "type": "Actual",
                   "mutability": "ReadOnly",
-                  "value": "<CS_ID>"
+                  "value": "cp001"
               }
           ],
           "minLength": 1,

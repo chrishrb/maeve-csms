@@ -22,8 +22,8 @@ type Location struct {
 }
 
 type LocationStore interface {
-	CreateLocation(ctx context.Context, location *Location) (*Location, error)
-	UpdateLocation(ctx context.Context, locationId string, location *Location) (*Location, error)
+	CreateLocation(ctx context.Context, location *Location) error
+	UpdateLocation(ctx context.Context, locationId string, location *Location) error
 	DeleteLocation(ctx context.Context, locationId string) error
 	LookupLocation(ctx context.Context, locationId string) (*Location, error)
 	ListLocations(context context.Context, offset int, limit int) ([]*Location, error)

@@ -19,6 +19,7 @@ func TestRegisterLocation(t *testing.T) {
 	defer server.Close()
 
 	req := httptest.NewRequest(http.MethodPost, "/location", strings.NewReader(`{
+  "id": "loc001",
   "name": "Gent Zuid",
   "address": "F.Rooseveltlaan 3A",
   "city": "Gent",
@@ -41,6 +42,7 @@ func TestRegisterLocation(t *testing.T) {
 	require.NoError(t, err)
 
 	want := &store.Location{
+		Id:      "loc001",
 		Address: "F.Rooseveltlaan 3A",
 		City:    "Gent",
 		Coordinates: store.GeoLocation{
@@ -49,7 +51,6 @@ func TestRegisterLocation(t *testing.T) {
 		},
 		Country:     "BEL",
 		CountryCode: "BEL",
-		Id:          res.Id,
 		Name:        testutil.StringPtr("Gent Zuid"),
 		ParkingType: testutil.StringPtr("ON_STREET"),
 		PostalCode:  testutil.StringPtr("9000"),

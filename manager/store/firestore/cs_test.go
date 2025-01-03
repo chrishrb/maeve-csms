@@ -30,6 +30,7 @@ func TestCreateAndLookupChargeStation(t *testing.T) {
 	require.NoError(t, err)
 
 	want := &store.ChargeStation{
+		Id:         "cs001",
 		LocationId: "location001",
 		Evses: &[]store.Evse{
 			{
@@ -71,11 +72,11 @@ func TestCreateAndLookupChargeStation(t *testing.T) {
 		Base64SHA256Password: "DEADBEEF",
 	}
 
-	cs, err := csStore.CreateChargeStation(ctx, want)
+	err = csStore.CreateChargeStation(ctx, want)
 	require.NoError(t, err)
-	assert.NotEmpty(t, cs.Id)
+	assert.NotEmpty(t, "cs001")
 
-	got, err := csStore.LookupChargeStation(ctx, cs.Id)
+	got, err := csStore.LookupChargeStation(ctx, "cs001")
 	require.NoError(t, err)
 
 	assert.Equal(t, want, got)
@@ -92,6 +93,7 @@ func TestListChargeStations(t *testing.T) {
 
 	chargeStations := []*store.ChargeStation{
 		{
+			Id:         "cs001",
 			LocationId: "location001",
 			Evses: &[]store.Evse{
 				{
@@ -116,6 +118,7 @@ func TestListChargeStations(t *testing.T) {
 			Base64SHA256Password: "DEADBEEF",
 		},
 		{
+			Id:         "cs002",
 			LocationId: "location002",
 			Evses: &[]store.Evse{
 				{
@@ -142,7 +145,7 @@ func TestListChargeStations(t *testing.T) {
 	}
 
 	for _, cs := range chargeStations {
-		_, err := csStore.CreateChargeStation(ctx, cs)
+		err := csStore.CreateChargeStation(ctx, cs)
 		require.NoError(t, err)
 	}
 
@@ -150,6 +153,8 @@ func TestListChargeStations(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Len(t, got, len(chargeStations))
+	assert.Equal(t, got[0], chargeStations[0])
+	assert.Equal(t, got[1], chargeStations[1])
 }
 
 func TestLookupChargeStationWithUnregisteredChargeStation(t *testing.T) {

@@ -24,6 +24,7 @@ type Api interface {
 	SetToken(ctx context.Context, token Token) error
 	GetToken(ctx context.Context, countryCode string, partyID string, tokenUID string) (*Token, error)
 	PushLocation(ctx context.Context, location Location) error
+	GetChargeStationOcppVersion(ctx context.Context, csId string) (store.OcppVersion, error)
 }
 
 type OCPI struct {
@@ -258,4 +259,16 @@ func (o *OCPI) setRequestHeaders(ctx context.Context, req *http.Request, token s
 	req.Header.Set("OCPI-from-party-id", o.partyId)
 	req.Header.Set("OCPI-to-country-code", toCountryCode)
 	req.Header.Set("OCPI-to-party-id", toPartyId)
+}
+
+func (o *OCPI) GetChargeStationOcppVersion(ctx context.Context, csId string) (store.OcppVersion, error) {
+	csDetails, err := o.store.LookupChargeStationRuntimeDetails(ctx, csId)
+	if err != nil {
+		return "", err
+	}
+	if csDetails == nil {
+		return "", errors.New("chargestation not found")
+	}
+
+	return csDetails.OcppVersion, nil
 }

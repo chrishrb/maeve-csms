@@ -6,23 +6,26 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/go-chi/chi/v5"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/thoughtworks/maeve-csms/manager/handlers"
-	"github.com/thoughtworks/maeve-csms/manager/handlers/ocpp16"
-	"github.com/thoughtworks/maeve-csms/manager/ocpi"
-	"github.com/thoughtworks/maeve-csms/manager/store"
-	"github.com/thoughtworks/maeve-csms/manager/store/inmemory"
-	"github.com/thoughtworks/maeve-csms/manager/transport"
 	"io"
-	"k8s.io/utils/clock"
-	fakeclock "k8s.io/utils/clock/testing"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/thoughtworks/maeve-csms/manager/handlers"
+	"github.com/thoughtworks/maeve-csms/manager/handlers/ocpp16"
+	"github.com/thoughtworks/maeve-csms/manager/handlers/ocpp201"
+	"github.com/thoughtworks/maeve-csms/manager/ocpi"
+	"github.com/thoughtworks/maeve-csms/manager/services"
+	"github.com/thoughtworks/maeve-csms/manager/store"
+	"github.com/thoughtworks/maeve-csms/manager/store/inmemory"
+	"github.com/thoughtworks/maeve-csms/manager/transport"
+	"k8s.io/utils/clock"
+	fakeclock "k8s.io/utils/clock/testing"
 )
 
 func setupHandler(t *testing.T) (http.Handler, store.Engine, time.Time) {
@@ -34,8 +37,10 @@ func setupHandler(t *testing.T) (http.Handler, store.Engine, time.Time) {
 
 	ocpiApi := ocpi.NewOCPI(engine, http.DefaultClient, "GB", "TWK")
 	v16CallMaker := newNoopV16CallMaker()
+	v201CallMaker := newNoopV201CallMaker()
 	now := time.Now().UTC()
-	server, err := ocpi.NewServer(ocpiApi, fakeclock.NewFakePassiveClock(now), v16CallMaker)
+	evseUidSvc := services.NewEvseUIDService(`^([A-Z]{2})\*([A-Z0-9]{3})\*E([0-9]+)\*?(.*)$`)
+	server, err := ocpi.NewServer(ocpiApi, fakeclock.NewFakePassiveClock(now), v16CallMaker, v201CallMaker, evseUidSvc)
 	require.NoError(t, err)
 
 	r := chi.NewRouter()
@@ -275,7 +280,7 @@ func TestServerPatchClientOwnedToken(t *testing.T) {
 	t.Logf("%s", string(b))
 }
 
-func TestPostStartSession(t *testing.T) {
+func TestPostStartSession16(t *testing.T) {
 	handler, engine, _ := setupHandler(t)
 
 	err := engine.SetToken(context.Background(), &store.Token{
@@ -290,10 +295,77 @@ func TestPostStartSession(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	err = engine.SetChargeStationRuntimeDetails(context.Background(), "00188", &store.ChargeStationRuntimeDetails{
+		OcppVersion: store.OcppVersion16,
+	})
+	require.NoError(t, err)
+
 	req := httptest.NewRequest(http.MethodPost, "/ocpi/receiver/2.2/commands/START_SESSION",
 		strings.NewReader(`{
 			"response_url": "https://example.com/ocpi/receiver/2.2/commands/START_SESSION/12345",
-			"evse_uid": "BEBECE041503001",
+			"evse_uid": "DE*GCE*E00188*001",
+			"connector_id": "2",
+			"token": {	
+				"type": "APP_USER",
+				"uid": "DEADBEEF",
+				"whitelist": "NEVER",
+				"country_code": "GB",
+				"party_id": "TWK",
+				"contract_id": "GBTWKTWTW000018",
+				"issuer": "Thoughtworks",
+				"valid": true
+			},
+			"location_id": "loc001",
+			"authorization_reference": "56789"
+		}`))
+	req.Header.Set("Authorization", "Token 123")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Request-ID", "123")
+	req.Header.Set("X-Correlation-ID", "123")
+	req.Header.Set("OCPI-from-country-code", "GB")
+	req.Header.Set("OCPI-from-party-id", "TWK")
+	req.Header.Set("OCPI-to-country-code", "GB")
+	req.Header.Set("OCPI-to-party-id", "TWK")
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	resp := w.Result()
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	b, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	var ocpiResponseCommandResponse ocpi.OcpiResponseCommandResponse
+	err = json.Unmarshal(b, &ocpiResponseCommandResponse)
+	require.NoError(t, err)
+	assert.Equal(t, ocpi.StatusSuccess, ocpiResponseCommandResponse.StatusCode)
+	t.Logf("%s", string(b))
+	require.NotNilf(t, ocpiResponseCommandResponse.Data, "ocpiResponseCommandResponse.Data should not be nil")
+	assert.Equal(t, ocpi.CommandResponseResultACCEPTED, ocpiResponseCommandResponse.Data.Result)
+}
+
+func TestPostStartSession201(t *testing.T) {
+	handler, engine, _ := setupHandler(t)
+
+	err := engine.SetToken(context.Background(), &store.Token{
+		CountryCode: "GB",
+		PartyId:     "TWK",
+		Type:        "RFID",
+		Uid:         "DEADBEEF",
+		ContractId:  "GBTWKTWTW000018",
+		Issuer:      "Thoughtworks",
+		Valid:       true,
+		CacheMode:   "ALWAYS",
+	})
+	require.NoError(t, err)
+
+	err = engine.SetChargeStationRuntimeDetails(context.Background(), "041503001", &store.ChargeStationRuntimeDetails{
+		OcppVersion: store.OcppVersion201,
+	})
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/ocpi/receiver/2.2/commands/START_SESSION",
+		strings.NewReader(`{
+			"response_url": "https://example.com/ocpi/receiver/2.2/commands/START_SESSION/12345",
+			"evse_uid": "BE*BEC*E041503001",
 			"connector_id": "2",
 			"token": {	
 				"type": "APP_USER",
@@ -337,4 +409,11 @@ func newNoopV16CallMaker() *handlers.OcppCallMaker {
 		return nil
 	})
 	return ocpp16.NewCallMaker(emitter)
+}
+
+func newNoopV201CallMaker() *handlers.OcppCallMaker {
+	emitter := transport.EmitterFunc(func(ctx context.Context, ocppVersion transport.OcppVersion, chargeStationId string, message *transport.Message) error {
+		return nil
+	})
+	return ocpp201.NewCallMaker(emitter)
 }

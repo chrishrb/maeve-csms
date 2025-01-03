@@ -24,7 +24,8 @@ func (s *Server) RegisterLocation(w http.ResponseWriter, r *http.Request) {
 		pt := string(*req.ParkingType)
 		parkingType = &pt
 	}
-	created, err := s.store.CreateLocation(r.Context(), &store.Location{
+	err := s.store.CreateLocation(r.Context(), &store.Location{
+		Id:      req.Id,
 		Address: req.Address,
 		City:    req.City,
 		Coordinates: store.GeoLocation{
@@ -43,7 +44,6 @@ func (s *Server) RegisterLocation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Id = &created.Id
 	w.WriteHeader(http.StatusCreated)
 	_ = render.Render(w, r, req)
 }
@@ -69,7 +69,7 @@ func (s *Server) ListLocations(w http.ResponseWriter, r *http.Request, params Li
 			parkingType = &pt
 		}
 		resp[i] = Location{
-			Id:          &loc.Id,
+			Id:          loc.Id,
 			Address:     loc.Address,
 			City:        loc.City,
 			Coordinates: coords,
@@ -102,7 +102,7 @@ func (s *Server) LookupLocation(w http.ResponseWriter, r *http.Request, location
 		parkingType = &pt
 	}
 	resp := Location{
-		Id:          &loc.Id,
+		Id:          loc.Id,
 		Address:     loc.Address,
 		City:        loc.City,
 		Coordinates: coords,

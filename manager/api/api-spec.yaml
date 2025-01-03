@@ -91,8 +91,6 @@ paths:
           required: true
           schema:
             type: 'string'
-            #TODO
-            #format: uuid
       responses:
         '200':
           description: Charge station details
@@ -579,8 +577,7 @@ paths:
           required: true
           schema:
             type: string
-            # TODO
-            #format: uuid
+            maxLength: 28
       responses:
         '200':
           description: 'Location details'
@@ -666,6 +663,7 @@ paths:
           description: 'The charge station identifier'
           schema:
             type: string
+            maxLength: 28
         - required: false
           in: 'query'
           name: 'offset'
@@ -710,6 +708,7 @@ paths:
           description: 'The charge station identifier'
           schema:
             type: string
+            maxLength: 28
         - name: transaction_id
           in: path
           required: true
@@ -748,7 +747,6 @@ components:
         id:
           type: string
           description: Unique identifier for the charge station.
-          readOnly: true
         location_id:
           type: string
           description: Identifier for the location of the charge station.
@@ -781,6 +779,9 @@ components:
         ocpp_version:
           type: string
           description: OCPP version used with charge station.
+          enum:
+            - "1.6"
+            - "2.0.1"
     Evse:
       type: object
       properties:
@@ -1069,6 +1070,7 @@ components:
       type: 'object'
       description: 'A charge station location'
       required:
+        - id
         - address
         - city
         - country
@@ -1078,7 +1080,7 @@ components:
       properties:
         id:
           type: string
-          readOnly: true
+          maxLength: 28
         country_code:
           type: string
         party_id:

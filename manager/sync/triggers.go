@@ -69,7 +69,7 @@ func SyncTriggers(ctx context.Context,
 
 						csId := pendingTriggerMessage.ChargeStationId
 						if clock.Now().After(pendingTriggerMessage.SendAfter) {
-							span.SetAttributes(attribute.String("sync.trigger.ocpp_version", details.OcppVersion))
+							span.SetAttributes(attribute.String("sync.trigger.ocpp_version", string(details.OcppVersion)))
 							err = engine.SetChargeStationTriggerMessage(ctx, csId, &store.ChargeStationTriggerMessage{
 								TriggerMessage: pendingTriggerMessage.TriggerMessage,
 								TriggerStatus:  store.TriggerStatusPending,

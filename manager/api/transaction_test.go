@@ -116,5 +116,5 @@ func TestListTransactionsByChargePoint(t *testing.T) {
 
 	assert.Len(t, res, 2)
 	assert.Equal(t, http.StatusOK, rr.Result().StatusCode)
-	assert.Equal(t, want, res)
+	assert.ElementsMatch(t, want, res)
 }

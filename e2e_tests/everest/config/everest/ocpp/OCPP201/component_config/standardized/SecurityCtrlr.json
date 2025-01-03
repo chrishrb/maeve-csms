@@ -118,11 +118,11 @@
         {
           "type": "Actual",
           "mutability": "ReadOnly",
-          "value": "<CS_ID>"
+          "value": "cp001"
         }
       ],
       "description": "The Charging Station identity.",
-      "default": "<CS_ID>",
+      "default": "cp001",
       "type": "string"
     },
     "MaxCertificateChainSize": {

@@ -61,7 +61,7 @@ func (s *Server) ListChargeStations(w http.ResponseWriter, r *http.Request, para
 			}
 		}
 		resp[i] = ChargeStation{
-			Id:                     &cs.Id,
+			Id:                     cs.Id,
 			LocationId:             cs.LocationId,
 			InvalidUsernameAllowed: &cs.InvalidUsernameAllowed,
 			Base64SHA256Password:   &cs.Base64SHA256Password,
@@ -124,7 +124,7 @@ func (s *Server) LookupChargeStation(w http.ResponseWriter, r *http.Request, csI
 	}
 
 	resp := ChargeStation{
-		Id:                     &cs.Id,
+		Id:                     cs.Id,
 		LocationId:             cs.LocationId,
 		InvalidUsernameAllowed: &cs.InvalidUsernameAllowed,
 		Base64SHA256Password:   &cs.Base64SHA256Password,
@@ -199,7 +199,8 @@ func (s *Server) RegisterChargeStation(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	created, err := s.store.CreateChargeStation(r.Context(), &store.ChargeStation{
+	err = s.store.CreateChargeStation(r.Context(), &store.ChargeStation{
+		Id:                     req.Id,
 		LocationId:             req.LocationId,
 		SecurityProfile:        store.SecurityProfile(req.SecurityProfile),
 		Base64SHA256Password:   pwd,
@@ -242,6 +243,7 @@ func (s *Server) RegisterChargeStation(w http.ResponseWriter, r *http.Request) {
 		parkingType = &pt
 	}
 	err = s.ocpi.PushLocation(r.Context(), ocpi.Location{
+		Id:      loc.Id,
 		Address: loc.Address,
 		City:    loc.City,
 		Coordinates: ocpi.GeoLocation{
@@ -251,7 +253,6 @@ func (s *Server) RegisterChargeStation(w http.ResponseWriter, r *http.Request) {
 		Country:     loc.Country,
 		CountryCode: loc.CountryCode,
 		Evses:       &ocpiEvses,
-		Id:          loc.Id,
 		LastUpdated: now.Format(time.RFC3339),
 		Name:        loc.Name,
 		ParkingType: parkingType,
@@ -264,7 +265,6 @@ func (s *Server) RegisterChargeStation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.Id = &created.Id
 	w.WriteHeader(http.StatusCreated)
 	_ = render.Render(w, r, req)
 }
@@ -362,7 +362,7 @@ func (s *Server) LookupChargeStationRuntimeDetails(w http.ResponseWriter, r *htt
 	}
 
 	resp := ChargeStationRuntimeDetails{
-		OcppVersion: csDetails.OcppVersion,
+		OcppVersion: ChargeStationRuntimeDetailsOcppVersion(csDetails.OcppVersion),
 	}
 
 	_ = render.Render(w, r, resp)

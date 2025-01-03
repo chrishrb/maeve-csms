@@ -177,3 +177,25 @@ func TestPushLocation(t *testing.T) {
 
 	require.NoError(t, err)
 }
+
+func TestGetChargeStationOcppVersion(t *testing.T) {
+	engine := inmemory.NewStore(clock.RealClock{})
+	ocpiApi := ocpi.NewOCPI(engine, http.DefaultClient, "GB", "TWK")
+
+	err := engine.SetChargeStationRuntimeDetails(context.Background(), "cs001", &store.ChargeStationRuntimeDetails{OcppVersion: "2.0.1"})
+	require.NoError(t, err)
+
+	version, err := ocpiApi.GetChargeStationOcppVersion(context.Background(), "cs001")
+	require.NoError(t, err)
+	assert.Equal(t, store.OcppVersion201, version)
+}
+
+func TestGetChargeStationOcppVersionNotFound(t *testing.T) {
+	engine := inmemory.NewStore(clock.RealClock{})
+	ocpiApi := ocpi.NewOCPI(engine, http.DefaultClient, "GB", "TWK")
+
+	_, err := ocpiApi.GetChargeStationOcppVersion(context.Background(), "cs001")
+	if err == nil {
+		t.Fatalf("should return error because charge station doesn't exist")
+	}
+}

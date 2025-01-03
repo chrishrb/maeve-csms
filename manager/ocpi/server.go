@@ -7,28 +7,35 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/go-chi/render"
 	"github.com/thoughtworks/maeve-csms/manager/handlers"
 	"github.com/thoughtworks/maeve-csms/manager/ocpp/ocpp16"
+	"github.com/thoughtworks/maeve-csms/manager/ocpp/ocpp201"
+	"github.com/thoughtworks/maeve-csms/manager/services"
+	"github.com/thoughtworks/maeve-csms/manager/store"
 	"golang.org/x/exp/slog"
 	"k8s.io/utils/clock"
-	"net/http"
-	"regexp"
-	"strconv"
-	"time"
 )
 
 type Server struct {
-	ocpi         Api
-	clock        clock.PassiveClock
-	v16CallMaker *handlers.OcppCallMaker
+	ocpi           Api
+	clock          clock.PassiveClock
+	v16CallMaker   *handlers.OcppCallMaker
+	v201CallMaker  *handlers.OcppCallMaker
+	evseUIDService services.ExtractService
 }
 
-func NewServer(ocpi Api, clock clock.PassiveClock, v16CallMaker *handlers.OcppCallMaker) (*Server, error) {
+func NewServer(ocpi Api, clock clock.PassiveClock, v16CallMaker *handlers.OcppCallMaker, v201CallMaker *handlers.OcppCallMaker, evseUIDService *services.EvseUIDService) (*Server, error) {
 	return &Server{
-		ocpi:         ocpi,
-		clock:        clock,
-		v16CallMaker: v16CallMaker,
+		ocpi:           ocpi,
+		clock:          clock,
+		v16CallMaker:   v16CallMaker,
+		v201CallMaker:  v201CallMaker,
+		evseUIDService: evseUIDService,
 	}, nil
 }
 
@@ -247,9 +254,6 @@ func (s *Server) PostReserveNow(w http.ResponseWriter, r *http.Request, params P
 }
 
 func (s *Server) PostStartSession(w http.ResponseWriter, r *http.Request, params PostStartSessionParams) {
-	// TODO: the following code supports OCPP 1.6 only, but we need to support 2.0 as well
-	// need to store OCPP protocol version for charge points on first connection
-	// need to create two handlers, one for 1.6 and one for 2.0, and call the right one based on the protocol version
 	startSession := new(StartSession)
 	if err := render.Bind(r, startSession); err != nil {
 		_ = render.Render(w, r, ErrInvalidRequest(err))
@@ -259,43 +263,76 @@ func (s *Server) PostStartSession(w http.ResponseWriter, r *http.Request, params
 	if startSession.EvseUid == nil || startSession.ConnectorId == nil {
 		_ = render.Render(w, r, ErrInvalidRequest(errors.New("CSMS does not support start session commands without evse_uid and connector_id")))
 		return
-	} else {
-		// TODO: this needs to become a service with a configurable pattern
-		extractedChargeStationId, err := extractChargeStationId(*startSession.EvseUid)
-		if err != nil {
-			slog.Error("error extracting charge station id", "err", err)
-			_ = render.Render(w, r, ErrInvalidRequest(err))
-			return
-		}
-		chargeStationId = extractedChargeStationId
 	}
+
+	chargeStationId, err := s.evseUIDService.GetChargeStationId(*startSession.EvseUid)
+	if err != nil {
+		slog.Error("error extracting charge station id", "err", err)
+		_ = render.Render(w, r, ErrInvalidRequest(err))
+		return
+	}
+
 	// We need to store the token because the StartSession handler currently expects the idTag it receives in the store
-	err := s.ocpi.SetToken(context.Background(), startSession.Token)
+	err = s.ocpi.SetToken(context.Background(), startSession.Token)
 	if err != nil {
 		_ = render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
+
+	ocppVersion, err := s.ocpi.GetChargeStationOcppVersion(r.Context(), chargeStationId)
+	if err != nil {
+		_ = render.Render(w, r, ErrInvalidRequest(err))
+		return
+	}
+
 	connectorId, err := strconv.Atoi(*startSession.ConnectorId)
 	if err != nil {
 		_ = render.Render(w, r, ErrInvalidRequest(err))
 		return
 	}
-	remoteStartTransactionReq := ocpp16.RemoteStartTransactionJson{
-		ConnectorId: &connectorId,
-		IdTag:       startSession.Token.Uid,
+
+	if ocppVersion == store.OcppVersion16 {
+		remoteStartTransactionReq := ocpp16.RemoteStartTransactionJson{
+			ConnectorId: &connectorId,
+			IdTag:       startSession.Token.Uid,
+		}
+		commandResponse := CommandResponse{Result: CommandResponseResultACCEPTED}
+		err = s.v16CallMaker.Send(context.Background(), chargeStationId, &remoteStartTransactionReq)
+		if err != nil {
+			slog.Error("error sending mqtt message", "err", err)
+			commandResponse = CommandResponse{Result: CommandResponseResultREJECTED}
+		}
+		_ = render.Render(w, r, OcpiResponseCommandResponse{
+			StatusCode:    StatusSuccess,
+			StatusMessage: &StatusSuccessMessage,
+			Timestamp:     s.clock.Now().Format(time.RFC3339),
+			Data:          &commandResponse,
+		})
+	} else {
+		evseId := &connectorId
+		if connectorId == 0 {
+			evseId = nil
+		}
+		remoteStartTransactionReq := ocpp201.RequestStartTransactionRequestJson{
+			EvseId: evseId,
+			IdToken: ocpp201.IdTokenType{
+				IdToken: startSession.Token.Uid,
+				Type:    ocpp201.IdTokenEnumType(startSession.Token.Type),
+			},
+		}
+		commandResponse := CommandResponse{Result: CommandResponseResultACCEPTED}
+		err = s.v201CallMaker.Send(context.Background(), chargeStationId, &remoteStartTransactionReq)
+		if err != nil {
+			slog.Error("error sending mqtt message", "err", err)
+			commandResponse = CommandResponse{Result: CommandResponseResultREJECTED}
+		}
+		_ = render.Render(w, r, OcpiResponseCommandResponse{
+			StatusCode:    StatusSuccess,
+			StatusMessage: &StatusSuccessMessage,
+			Timestamp:     s.clock.Now().Format(time.RFC3339),
+			Data:          &commandResponse,
+		})
 	}
-	commandResponse := CommandResponse{Result: CommandResponseResultACCEPTED}
-	err = s.v16CallMaker.Send(context.Background(), chargeStationId, &remoteStartTransactionReq)
-	if err != nil {
-		slog.Error("error sending mqtt message", "err", err)
-		commandResponse = CommandResponse{Result: CommandResponseResultREJECTED}
-	}
-	_ = render.Render(w, r, OcpiResponseCommandResponse{
-		StatusCode:    StatusSuccess,
-		StatusMessage: &StatusSuccessMessage,
-		Timestamp:     s.clock.Now().Format(time.RFC3339),
-		Data:          &commandResponse,
-	})
 }
 
 func (s *Server) PostStopSession(w http.ResponseWriter, r *http.Request, params PostStopSessionParams) {
@@ -428,16 +465,4 @@ func (s *Server) GetTokensPageFromDataOwner(w http.ResponseWriter, r *http.Reque
 
 func (s *Server) PostRealTimeTokenAuthorization(w http.ResponseWriter, r *http.Request, tokenUID string, params PostRealTimeTokenAuthorizationParams) {
 	w.WriteHeader(http.StatusNotImplemented)
-}
-
-func extractChargeStationId(evseId string) (string, error) {
-	pattern := `^[a-zA-Z]{5}E([a-zA-Z0-9]+)?$`
-	regex := regexp.MustCompile(pattern)
-	match := regex.FindStringSubmatch(evseId)
-	if len(match) >= 2 {
-		chargePointID := match[1]
-		return chargePointID, nil
-	} else {
-		return "", fmt.Errorf("invalid EVSE ID format, could not extract charge point ID: %s", evseId)
-	}
 }

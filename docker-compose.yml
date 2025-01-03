@@ -51,6 +51,8 @@ services:
       - "mqtt://mqtt:1883"
       - "--manager-api-addr"
       - "http://manager:9410"
+      - "--otel-collector-addr"
+      - "otel-collector:4317"
     ports:
       - "80:9310" # charge station ws
       - "443:9311" # charge station wss
@@ -118,3 +120,18 @@ services:
       - "8081:8080"
     depends_on:
       - manager
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - 4317:4317
+    volumes:
+      - ./config/otel-collector/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp" # UDP port for Jaeger agent
+      - "16686:16686" # Web UI
+      - "14268:14268" # HTTP port for spans

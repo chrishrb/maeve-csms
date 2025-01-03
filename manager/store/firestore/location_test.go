@@ -9,6 +9,8 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thoughtworks/maeve-csms/manager/store"
@@ -27,6 +29,7 @@ func TestSetAndLookupLocation(t *testing.T) {
 	require.NoError(t, err)
 
 	want := &store.Location{
+		Id:      "loc001",
 		Address: "F.Rooseveltlaan 3A",
 		City:    "Gent",
 		Coordinates: store.GeoLocation{
@@ -34,16 +37,15 @@ func TestSetAndLookupLocation(t *testing.T) {
 			Longitude: "3.729944",
 		},
 		Country:     "BEL",
-		Id:          "loc001",
 		Name:        testutil.StringPtr("Gent Zuid"),
 		ParkingType: testutil.StringPtr("ON_STREET"),
 		PostalCode:  testutil.StringPtr("9000"),
 	}
-	loc, err := locationStore.CreateLocation(ctx, want)
+	err = locationStore.CreateLocation(ctx, want)
 	require.NoError(t, err)
-	assert.NotEmpty(t, loc.Id)
+	assert.NotEmpty(t, "loc001")
 
-	got, err := locationStore.LookupLocation(ctx, loc.Id)
+	got, err := locationStore.LookupLocation(ctx, "loc001")
 	require.NoError(t, err)
 
 	assert.Regexp(t, `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`, got.LastUpdated)
@@ -63,6 +65,7 @@ func TestListLocations(t *testing.T) {
 	locations := make([]*store.Location, 20)
 	for i := 0; i < 20; i++ {
 		locations[i] = &store.Location{
+			Id:      fmt.Sprintf("loc%02d", i),
 			Address: "Randomstreet 3A",
 			City:    "Randomtown",
 			Coordinates: store.GeoLocation{
@@ -77,7 +80,7 @@ func TestListLocations(t *testing.T) {
 	}
 
 	for _, loc := range locations {
-		_, err = locationStore.CreateLocation(ctx, loc)
+		err = locationStore.CreateLocation(ctx, loc)
 		require.NoError(t, err)
 	}
 
@@ -85,4 +88,7 @@ func TestListLocations(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, 10, len(got))
+	if !cmp.Equal(locations[:10], got, cmpopts.IgnoreFields(store.Location{}, "LastUpdated")) {
+		t.Errorf("locations list wrong")
+	}
 }

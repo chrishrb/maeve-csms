@@ -1,6 +1,9 @@
 [api]
 addr = ":9410"
 
+[observability]
+otel_collector_addr = "otel-collector:4317"
+
 [transport]
 type = "mqtt"
 mqtt.urls = ["mqtt://mqtt:1883"]

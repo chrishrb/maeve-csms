@@ -50,7 +50,7 @@ func SyncCertificates(ctx context.Context, engine store.Engine, clock clock.Pass
 					if certificate.CertificateInstallationStatus != store.CertificateInstallationAccepted && clock.Now().After(certificate.SendAfter) {
 						slog.Info("updating charge station certificates", slog.String("chargeStationId", csId),
 							slog.String("certificate", certificate.CertificateId),
-							slog.String("OcppVersion", details.OcppVersion))
+							slog.String("OcppVersion", string(details.OcppVersion)))
 						certificate.SendAfter = clock.Now().Add(retryAfter)
 						err = engine.UpdateChargeStationInstallCertificates(ctx, csId, &store.ChargeStationInstallCertificates{
 							Certificates: []*store.ChargeStationInstallCertificate{

@@ -8,31 +8,23 @@ import (
 	"time"
 
 	"cloud.google.com/go/firestore"
-	"github.com/google/uuid"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func (s *Store) CreateChargeStation(ctx context.Context, cs *store.ChargeStation) (*store.ChargeStation, error) {
-	id := uuid.NewString()
-	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", id))
-	cs.Id = id
-	_, err := csRef.Set(ctx, &cs)
-	if err != nil {
-		return nil, fmt.Errorf("setting cs %s: %w", id, err)
-	}
-	return s.LookupChargeStation(ctx, id)
+func (s *Store) CreateChargeStation(ctx context.Context, cs *store.ChargeStation) error {
+	return s.UpdateChargeStation(ctx, cs.Id, cs)
 }
 
-func (s *Store) UpdateChargeStation(ctx context.Context, csId string, cs *store.ChargeStation) (*store.ChargeStation, error) {
+func (s *Store) UpdateChargeStation(ctx context.Context, csId string, cs *store.ChargeStation) error {
 	csRef := s.client.Doc(fmt.Sprintf("ChargeStation/%s", csId))
 	_, err := csRef.Set(ctx, &cs)
 	if err != nil {
-		return nil, fmt.Errorf("setting cs %s: %w", csId, err)
+		return fmt.Errorf("setting cs %s: %w", csId, err)
 	}
-	return s.LookupChargeStation(ctx, csId)
+	return nil
 }
 
 func (s *Store) DeleteChargeStation(ctx context.Context, chargeStationId string) error {
@@ -268,7 +260,7 @@ type chargeStationRuntimeDetails struct {
 func (s *Store) SetChargeStationRuntimeDetails(ctx context.Context, chargeStationId string, details *store.ChargeStationRuntimeDetails) error {
 	csRef := s.client.Doc(fmt.Sprintf("ChargeStationRuntimeDetails/%s", chargeStationId))
 	_, err := csRef.Set(ctx, &chargeStationRuntimeDetails{
-		OcppVersion: details.OcppVersion,
+		OcppVersion: string(details.OcppVersion),
 	})
 	if err != nil {
 		return err
@@ -290,7 +282,7 @@ func (s *Store) LookupChargeStationRuntimeDetails(ctx context.Context, chargeSta
 		return nil, fmt.Errorf("map charge station runtime details %s: %w", chargeStationId, err)
 	}
 	return &store.ChargeStationRuntimeDetails{
-		OcppVersion: csData.OcppVersion,
+		OcppVersion: store.OcppVersion(csData.OcppVersion),
 	}, nil
 }
 

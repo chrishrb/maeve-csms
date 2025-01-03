@@ -7,31 +7,23 @@ import (
 	"fmt"
 
 	"cloud.google.com/go/firestore"
-	"github.com/google/uuid"
 	"github.com/thoughtworks/maeve-csms/manager/store"
 	"google.golang.org/api/iterator"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func (s *Store) CreateLocation(ctx context.Context, loc *store.Location) (*store.Location, error) {
-	id := uuid.NewString()
-	locationRef := s.client.Doc(fmt.Sprintf("Location/%s", id))
-	loc.Id = id
-	_, err := locationRef.Set(ctx, loc)
-	if err != nil {
-		return nil, fmt.Errorf("setting location %s: %w", id, err)
-	}
-	return s.LookupLocation(ctx, id)
+func (s *Store) CreateLocation(ctx context.Context, loc *store.Location) error {
+	return s.UpdateLocation(ctx, loc.Id, loc)
 }
 
-func (s *Store) UpdateLocation(ctx context.Context, locationId string, loc *store.Location) (*store.Location, error) {
+func (s *Store) UpdateLocation(ctx context.Context, locationId string, loc *store.Location) error {
 	locationRef := s.client.Doc(fmt.Sprintf("Location/%s", locationId))
 	_, err := locationRef.Set(ctx, loc)
 	if err != nil {
-		return nil, fmt.Errorf("setting location %s: %w", locationId, err)
+		return fmt.Errorf("setting location %s: %w", locationId, err)
 	}
-	return s.LookupLocation(ctx, locationId)
+	return nil
 }
 
 func (s *Store) DeleteLocation(ctx context.Context, locationId string) error {
